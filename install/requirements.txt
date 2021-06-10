@@ -7,3 +7,4 @@ pathlib
 rasterio
 shapely
 sqlalchemy
+typing
