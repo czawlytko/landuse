@@ -92,11 +92,11 @@ def datacheck(cf, psegs):
         sys.exit()
 
     pre = len(psegs)
-    psegs = psegs[(psegs.Class_name != 'NA') | (psegs.Class_name == "")]
+    psegs = psegs[(psegs.Class_name != "")]
     post = len(psegs)
-    
+
     print(f'--Removed {pre-post} segments missing Class_name\n----Pre-removal : {pre}\n----Post-removal: {post}')
-    sys.exit()
+
     if 'lu' not in psegs.columns:
         psegs['lu'] = None
 
@@ -816,7 +816,7 @@ def RUN(cf, test):
 ##################################### 
     if test:
         print('--landuse.RUN() Test: ', test, type(test))
-        psegsPath = r"B:/landuse/testing_subsets/psegs_sub4.gpkg" # for checking nat succession
+        # psegsPath = r"B:/landuse/testing_subsets/psegs_sub4.gpkg" # for checking nat succession
         # psegsPath = r"B:/landuse/nat_testing/psegs_sub_edge.gpkg" # for checking edge NA data
         inLayer = 'psegs'
 

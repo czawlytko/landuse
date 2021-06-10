@@ -69,7 +69,7 @@ if __name__ == "__main__":
         print("--batch_size: ", batch_size)
 
         run_dp = False
-        run_lu = True
+        run_lu = False
         run_tc = True
         run_bi = True
         run_change = False
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
         if run_tc:
             print("do tc")
-            # tc_flag = trees_over.run_trees_over_submodule(luconfig.TC_CPUS, cf)
+            tc_flag = trees_over.run_trees_over_submodule(luconfig.TC_CPUS, cf)
 
             if tc_flag == 0:
                 print("Trees over Submodule complete")
