@@ -472,8 +472,8 @@ if __name__ == '__main__':
     print('creating a geopackage')
 #     #Take the params defined above and make the geopackage, this will return the path to the created geopackage
     st = time.time() #Start timer for creating geopackage
-    x = 'P:/cumb_42041/input/segments.gpkg'
-    # x = helper.gdbTogpkg(p)
+    # x = 'P:/cumb_42041/input/segments.gpkg'
+    x = helper.gdbTogpkg(p)
     time_helper.etime(county,'created geopackage', st)
 
 # # # #Explode the polygons
