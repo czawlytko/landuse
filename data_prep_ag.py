@@ -472,7 +472,8 @@ if __name__ == '__main__':
     print('creating a geopackage')
 #     #Take the params defined above and make the geopackage, this will return the path to the created geopackage
     st = time.time() #Start timer for creating geopackage
-    x = helper.gdbTogpkg(p)
+    x = 'P:/cumb_42041/input/segments.gpkg'
+    # x = helper.gdbTogpkg(p)
     time_helper.etime(county,'created geopackage', st)
 
 # # # #Explode the polygons
@@ -481,18 +482,18 @@ if __name__ == '__main__':
 #     st=time.time() #start the timer for explode polygons
 #     lc_segs, after_len = helper.explodeMultipolygon(x)
     lc_segs = gpd.read_file(x)  
-    lc_segs['SID']= [int(x) for x in range(1, after_len+1)]
+    lc_segs['SID']= [int(x) for x in range(1, len(lc_segs)+1)]
 #     time_for_explode = time_helper.etime(county,'exploded segs and assigned unique id', st)
 
 # #     # # do same thing with parcel dataset
 # #     # read in parcels
-    parcels_path1 = '{0}/{1}/input/parcels.shp'.format(project_folder, county)
+    parcels = '{0}/{1}/input/parcels.shp'.format(project_folder, county)
     st=time.time() #start timer for doing land parcels
     print('reading parcels polygon layer')
     # parcels, after_len = helper.explodeMultipolygonShape(parcels_path1, ['OBJECTID', 'geometry'])
     target_fields = ['OBJECTID','geometry']
     parcels = parcels[target_fields]
-    parcels['PID']= [int(x) for x in range(1, after_len+1)]
+    parcels['PID']= [int(x) for x in range(1, len(parcels)+1)]
     time_helper.etime(county,'exploded parcels and assigned unique id', st)
 
 
