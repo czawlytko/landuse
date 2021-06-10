@@ -561,7 +561,7 @@ def luz(cf, psegs):
         elif luz == 'NAT':
             lu_name = 'Natural Succession'
         elif luz == 'TIM':
-            lu_name = 'Timber Harvest'
+            lu_name = 'Harvested Forest'
         elif luz in ('OV'): # rev2 6/1- removed CROP
             lu_name = 'Orchard/Vineyard'
         elif luz in ('CAFO', 'CATT'):
@@ -583,7 +583,7 @@ def luz(cf, psegs):
         elif luz in ('NAT', 'EXT'): # added EXT for rev2 from suspended to natural
             lu_name = 'Natural Succession'
         elif luz == 'TIM':
-            lu_name = 'Timber Harvest'
+            lu_name = 'Harvested Forest'
         elif luz in ('CAFO', 'CATT'):
             lu_name = 'Pasture'
         elif luz == 'OV':
@@ -677,7 +677,7 @@ def here(psegs, ancipath, newlu, newlogic):
             psegs.loc[psegs["SID"] == i, 'lu'] = newlu
 
     print(f'{len(sj.SID.unique())} segs found with HERE data')
-    etime(cf, psegs, f"HERE ", here_st)    
+    etime(cf, psegs, f"HERE ", here_st)
 
 
 def lcmap_timber_mp(psegs, thlu, thlogic, nslu, nslogic, df1, anci_folder, timHarRasPath, sucAgeRasPath, batch_size):
@@ -971,14 +971,14 @@ def RUN(cf, test):
         st_timb = time.time()
         df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']))]
         sjoin_mp(psegs, "Harvested Forest", "timber sjoin", df1, anci_folder, timberPath, batch_size)
-        etime(cf, psegs,  "Timber Harvest anci sjoin", st_timb)
+        etime(cf, psegs,  "State Timber Harvest anci sjoin", st_timb)
     else:
-        print('Skipping Timber Harvest anci sjoin, no anci for state')
+        print('Skipping State Timber Harvest anci sjoin, no anci for state')
 
     # LCMAP
     th_st = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren']))]
-    lcmap_timber_mp(psegs, 'Timber Harvest', 'lcmap clearing', 'Natural Succession', 'LCMAP clearing before 2015', df1, anci_folder, anci_dict['timHarRasPath'], anci_dict['sucAgeRasPath'],  10000)
+    lcmap_timber_mp(psegs, 'Harvested Forest', 'lcmap clearing', 'Natural Succession', 'LCMAP clearing before 2015', df1, anci_folder, anci_dict['timHarRasPath'], anci_dict['sucAgeRasPath'],  10000)
     etime(cf, psegs, 'LCMAP timber harvest', th_st)
 
     # map LUZ values

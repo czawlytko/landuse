@@ -53,12 +53,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Integrated Land Use production arg parser')
     parser.add_argument('-cfs', nargs='+', help='list co_fips (cf) ', required=True)
-    parser.add_argument('-bsize', type=str, help='batch size for chunking in certain land use sub-models')
     parser.add_argument('--test', default=False, action='store_true')
 
     args = parser.parse_args()
     cflist = list(args.cfs)
-    batch_size = int(args.bsize)
+
+    batch_size = luconfig.batch_size
     here_turf_batch_size = batch_size
     test = args.test # confirm if this works
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         run_lu = False
         run_tc = True
         run_bi = True
-        run_change = False
+        run_change = True
 
         # if not dp_outs.exist() and run_dp:
         #     prep.RUN(folder, cf)

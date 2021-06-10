@@ -85,6 +85,7 @@ def make_ta_dict(cf, anci_folder, folder):
                 'luz_sid': luz_sid,
                 'luz_pid': luz_pid
                 }
+
     return dict_dict
        
 def convertRATs(folder, cf):
