@@ -1,5 +1,5 @@
 import time
-from typing import OrderedDict
+from collections import OrderedDict
 import osgeo
 from osgeo import ogr
 import os
