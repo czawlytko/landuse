@@ -490,9 +490,10 @@ if __name__ == '__main__':
     parcels = '{0}/{1}/input/parcels.shp'.format(project_folder, county)
     st=time.time() #start timer for doing land parcels
     print('reading parcels polygon layer')
+    parcels = gpd.read_file(parcels) 
     # parcels, after_len = helper.explodeMultipolygonShape(parcels_path1, ['OBJECTID', 'geometry'])
-    target_fields = ['OBJECTID','geometry']
-    parcels = parcels[target_fields]
+    # target_fields = ['OBJECTID','geometry']
+    # parcels = parcels[target_fields]
     parcels['PID']= [int(x) for x in range(1, len(parcels)+1)]
     time_helper.etime(county,'exploded parcels and assigned unique id', st)
 
