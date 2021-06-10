@@ -1,0 +1,157 @@
+Value,T1_LU,T2_LU,Change
+201,Impervious Non-Roads,Impervious Roads,Impervious Non-Roads to Impervious Roads
+301,Tree Canopy Over Impervious,Impervious Roads,Tree Canopy Over Impervious to Impervious Roads
+401,Turf Grass,Impervious Roads,Turf Grass to Impervious Roads
+501,Tree Canopy over Turf Grass,Impervious Roads,Tree Canopy over Turf Grass to Impervious Roads
+601,Forest,Impervious Roads,Forest to Impervious Roads
+701,"Wetlands, Floodplain",Impervious Roads,"Wetlands, Floodplain to Impervious Roads"
+801,"Wetlands, Other",Impervious Roads,"Wetlands, Other to Impervious Roads"
+901,"Wetlands, Tidal",Impervious Roads,"Wetlands, Tidal to Impervious Roads"
+1001,Mixed Open,Impervious Roads,Mixed Open to Impervious Roads
+1101,Cropland,Impervious Roads,Cropland to Impervious Roads
+1201,Pasture,Impervious Roads,Pasture to Impervious Roads
+1301,Water,Impervious Roads,Water to Impervious Roads
+102,Impervious Roads,Impervious Non-Roads,Impervious Roads to Impervious Non-Roads
+302,Tree Canopy Over Impervious,Impervious Non-Roads,Tree Canopy Over Impervious to Impervious Non-Roads
+402,Turf Grass,Impervious Non-Roads,Turf Grass to Impervious Non-Roads
+502,Tree Canopy over Turf Grass,Impervious Non-Roads,Tree Canopy over Turf Grass to Impervious Non-Roads
+602,Forest,Impervious Non-Roads,Forest to Impervious Non-Roads
+702,"Wetlands, Floodplain",Impervious Non-Roads,"Wetlands, Floodplain to Impervious Non-Roads"
+802,"Wetlands, Other",Impervious Non-Roads,"Wetlands, Other to Impervious Non-Roads"
+902,"Wetlands, Tidal",Impervious Non-Roads,"Wetlands, Tidal to Impervious Non-Roads"
+1002,Mixed Open,Impervious Non-Roads,Mixed Open to Impervious Non-Roads
+1102,Cropland,Impervious Non-Roads,Cropland to Impervious Non-Roads
+1202,Pasture,Impervious Non-Roads,Pasture to Impervious Non-Roads
+1302,Water,Impervious Non-Roads,Water to Impervious Non-Roads
+103,Impervious Roads,Tree Canopy Over Impervious,Impervious Roads to Tree Canopy Over Impervious
+203,Impervious Non-Roads,Tree Canopy Over Impervious,Impervious Non-Roads to Tree Canopy Over Impervious
+403,Turf Grass,Tree Canopy Over Impervious,Turf Grass to Tree Canopy Over Impervious
+503,Tree Canopy over Turf Grass,Tree Canopy Over Impervious,Tree Canopy over Turf Grass to Tree Canopy Over Impervious
+603,Forest,Tree Canopy Over Impervious,Forest to Tree Canopy Over Impervious
+703,"Wetlands, Floodplain",Tree Canopy Over Impervious,"Wetlands, Floodplain to Tree Canopy Over Impervious"
+803,"Wetlands, Other",Tree Canopy Over Impervious,"Wetlands, Other to Tree Canopy Over Impervious"
+903,"Wetlands, Tidal",Tree Canopy Over Impervious,"Wetlands, Tidal to Tree Canopy Over Impervious"
+1003,Mixed Open,Tree Canopy Over Impervious,Mixed Open to Tree Canopy Over Impervious
+1103,Cropland,Tree Canopy Over Impervious,Cropland to Tree Canopy Over Impervious
+1203,Pasture,Tree Canopy Over Impervious,Pasture to Tree Canopy Over Impervious
+1303,Water,Tree Canopy Over Impervious,Water to Tree Canopy Over Impervious
+104,Impervious Roads,Turf Grass,Impervious Roads to Turf Grass
+204,Impervious Non-Roads,Turf Grass,Impervious Non-Roads to Turf Grass
+304,Tree Canopy Over Impervious,Turf Grass,Tree Canopy Over Impervious to Turf Grass
+504,Tree Canopy over Turf Grass,Turf Grass,Tree Canopy over Turf Grass to Turf Grass
+604,Forest,Turf Grass,Forest to Turf Grass
+704,"Wetlands, Floodplain",Turf Grass,"Wetlands, Floodplain to Turf Grass"
+804,"Wetlands, Other",Turf Grass,"Wetlands, Other to Turf Grass"
+904,"Wetlands, Tidal",Turf Grass,"Wetlands, Tidal to Turf Grass"
+1004,Mixed Open,Turf Grass,Mixed Open to Turf Grass
+1104,Cropland,Turf Grass,Cropland to Turf Grass
+1204,Pasture,Turf Grass,Pasture to Turf Grass
+1304,Water,Turf Grass,Water to Turf Grass
+105,Impervious Roads,Tree Canopy over Turf Grass,Impervious Roads to Tree Canopy over Turf Grass
+205,Impervious Non-Roads,Tree Canopy over Turf Grass,Impervious Non-Roads to Tree Canopy over Turf Grass
+305,Tree Canopy Over Impervious,Tree Canopy over Turf Grass,Tree Canopy Over Impervious to Tree Canopy over Turf Grass
+405,Turf Grass,Tree Canopy over Turf Grass,Turf Grass to Tree Canopy over Turf Grass
+605,Forest,Tree Canopy over Turf Grass,Forest to Tree Canopy over Turf Grass
+705,"Wetlands, Floodplain",Tree Canopy over Turf Grass,"Wetlands, Floodplain to Tree Canopy over Turf Grass"
+805,"Wetlands, Other",Tree Canopy over Turf Grass,"Wetlands, Other to Tree Canopy over Turf Grass"
+905,"Wetlands, Tidal",Tree Canopy over Turf Grass,"Wetlands, Tidal to Tree Canopy over Turf Grass"
+1005,Mixed Open,Tree Canopy over Turf Grass,Mixed Open to Tree Canopy over Turf Grass
+1105,Cropland,Tree Canopy over Turf Grass,Cropland to Tree Canopy over Turf Grass
+1205,Pasture,Tree Canopy over Turf Grass,Pasture to Tree Canopy over Turf Grass
+1305,Water,Tree Canopy over Turf Grass,Water to Tree Canopy over Turf Grass
+106,Impervious Roads,Forest,Impervious Roads to Forest
+206,Impervious Non-Roads,Forest,Impervious Non-Roads to Forest
+306,Tree Canopy Over Impervious,Forest,Tree Canopy Over Impervious to Forest
+406,Turf Grass,Forest,Turf Grass to Forest
+506,Tree Canopy over Turf Grass,Forest,Tree Canopy over Turf Grass to Forest
+706,"Wetlands, Floodplain",Forest,"Wetlands, Floodplain to Forest"
+806,"Wetlands, Other",Forest,"Wetlands, Other to Forest"
+906,"Wetlands, Tidal",Forest,"Wetlands, Tidal to Forest"
+1006,Mixed Open,Forest,Mixed Open to Forest
+1106,Cropland,Forest,Cropland to Forest
+1206,Pasture,Forest,Pasture to Forest
+1306,Water,Forest,Water to Forest
+107,Impervious Roads,"Wetlands, Floodplain","Impervious Roads to Wetlands, Floodplain"
+207,Impervious Non-Roads,"Wetlands, Floodplain","Impervious Non-Roads to Wetlands, Floodplain"
+307,Tree Canopy Over Impervious,"Wetlands, Floodplain","Tree Canopy Over Impervious to Wetlands, Floodplain"
+407,Turf Grass,"Wetlands, Floodplain","Turf Grass to Wetlands, Floodplain"
+507,Tree Canopy over Turf Grass,"Wetlands, Floodplain","Tree Canopy over Turf Grass to Wetlands, Floodplain"
+607,Forest,"Wetlands, Floodplain","Forest to Wetlands, Floodplain"
+807,"Wetlands, Other","Wetlands, Floodplain","Wetlands, Other to Wetlands, Floodplain"
+907,"Wetlands, Tidal","Wetlands, Floodplain","Wetlands, Tidal to Wetlands, Floodplain"
+1007,Mixed Open,"Wetlands, Floodplain","Mixed Open to Wetlands, Floodplain"
+1107,Cropland,"Wetlands, Floodplain","Cropland to Wetlands, Floodplain"
+1207,Pasture,"Wetlands, Floodplain","Pasture to Wetlands, Floodplain"
+1307,Water,"Wetlands, Floodplain","Water to Wetlands, Floodplain"
+108,Impervious Roads,"Wetlands, Other","Impervious Roads to Wetlands, Other"
+208,Impervious Non-Roads,"Wetlands, Other","Impervious Non-Roads to Wetlands, Other"
+308,Tree Canopy Over Impervious,"Wetlands, Other","Tree Canopy Over Impervious to Wetlands, Other"
+408,Turf Grass,"Wetlands, Other","Turf Grass to Wetlands, Other"
+508,Tree Canopy over Turf Grass,"Wetlands, Other","Tree Canopy over Turf Grass to Wetlands, Other"
+608,Forest,"Wetlands, Other","Forest to Wetlands, Other"
+708,"Wetlands, Floodplain","Wetlands, Other","Wetlands, Floodplain to Wetlands, Other"
+908,"Wetlands, Tidal","Wetlands, Other","Wetlands, Tidal to Wetlands, Other"
+1008,Mixed Open,"Wetlands, Other","Mixed Open to Wetlands, Other"
+1108,Cropland,"Wetlands, Other","Cropland to Wetlands, Other"
+1208,Pasture,"Wetlands, Other","Pasture to Wetlands, Other"
+1308,Water,"Wetlands, Other","Water to Wetlands, Other"
+109,Impervious Roads,"Wetlands, Tidal","Impervious Roads to Wetlands, Tidal"
+209,Impervious Non-Roads,"Wetlands, Tidal","Impervious Non-Roads to Wetlands, Tidal"
+309,Tree Canopy Over Impervious,"Wetlands, Tidal","Tree Canopy Over Impervious to Wetlands, Tidal"
+409,Turf Grass,"Wetlands, Tidal","Turf Grass to Wetlands, Tidal"
+509,Tree Canopy over Turf Grass,"Wetlands, Tidal","Tree Canopy over Turf Grass to Wetlands, Tidal"
+609,Forest,"Wetlands, Tidal","Forest to Wetlands, Tidal"
+709,"Wetlands, Floodplain","Wetlands, Tidal","Wetlands, Floodplain to Wetlands, Tidal"
+809,"Wetlands, Other","Wetlands, Tidal","Wetlands, Other to Wetlands, Tidal"
+1009,Mixed Open,"Wetlands, Tidal","Mixed Open to Wetlands, Tidal"
+1109,Cropland,"Wetlands, Tidal","Cropland to Wetlands, Tidal"
+1209,Pasture,"Wetlands, Tidal","Pasture to Wetlands, Tidal"
+1309,Water,"Wetlands, Tidal","Water to Wetlands, Tidal"
+110,Impervious Roads,Mixed Open,Impervious Roads to Mixed Open
+210,Impervious Non-Roads,Mixed Open,Impervious Non-Roads to Mixed Open
+310,Tree Canopy Over Impervious,Mixed Open,Tree Canopy Over Impervious to Mixed Open
+410,Turf Grass,Mixed Open,Turf Grass to Mixed Open
+510,Tree Canopy over Turf Grass,Mixed Open,Tree Canopy over Turf Grass to Mixed Open
+610,Forest,Mixed Open,Forest to Mixed Open
+710,"Wetlands, Floodplain",Mixed Open,"Wetlands, Floodplain to Mixed Open"
+810,"Wetlands, Other",Mixed Open,"Wetlands, Other to Mixed Open"
+910,"Wetlands, Tidal",Mixed Open,"Wetlands, Tidal to Mixed Open"
+1110,Cropland,Mixed Open,Cropland to Mixed Open
+1210,Pasture,Mixed Open,Pasture to Mixed Open
+1310,Water,Mixed Open,Water to Mixed Open
+111,Impervious Roads,Cropland,Impervious Roads to Cropland
+211,Impervious Non-Roads,Cropland,Impervious Non-Roads to Cropland
+311,Tree Canopy Over Impervious,Cropland,Tree Canopy Over Impervious to Cropland
+411,Turf Grass,Cropland,Turf Grass to Cropland
+511,Tree Canopy over Turf Grass,Cropland,Tree Canopy over Turf Grass to Cropland
+611,Forest,Cropland,Forest to Cropland
+711,"Wetlands, Floodplain",Cropland,"Wetlands, Floodplain to Cropland"
+811,"Wetlands, Other",Cropland,"Wetlands, Other to Cropland"
+911,"Wetlands, Tidal",Cropland,"Wetlands, Tidal to Cropland"
+1011,Mixed Open,Cropland,Mixed Open to Cropland
+1211,Pasture,Cropland,Pasture to Cropland
+1311,Water,Cropland,Water to Cropland
+112,Impervious Roads,Pasture,Impervious Roads to Pasture
+212,Impervious Non-Roads,Pasture,Impervious Non-Roads to Pasture
+312,Tree Canopy Over Impervious,Pasture,Tree Canopy Over Impervious to Pasture
+412,Turf Grass,Pasture,Turf Grass to Pasture
+512,Tree Canopy over Turf Grass,Pasture,Tree Canopy over Turf Grass to Pasture
+612,Forest,Pasture,Forest to Pasture
+712,"Wetlands, Floodplain",Pasture,"Wetlands, Floodplain to Pasture"
+812,"Wetlands, Other",Pasture,"Wetlands, Other to Pasture"
+912,"Wetlands, Tidal",Pasture,"Wetlands, Tidal to Pasture"
+1012,Mixed Open,Pasture,Mixed Open to Pasture
+1112,Cropland,Pasture,Cropland to Pasture
+1312,Water,Pasture,Water to Pasture
+113,Impervious Roads,Water,Impervious Roads to Water
+213,Impervious Non-Roads,Water,Impervious Non-Roads to Water
+313,Tree Canopy Over Impervious,Water,Tree Canopy Over Impervious to Water
+413,Turf Grass,Water,Turf Grass to Water
+513,Tree Canopy over Turf Grass,Water,Tree Canopy over Turf Grass to Water
+613,Forest,Water,Forest to Water
+713,"Wetlands, Floodplain",Water,"Wetlands, Floodplain to Water"
+813,"Wetlands, Other",Water,"Wetlands, Other to Water"
+913,"Wetlands, Tidal",Water,"Wetlands, Tidal to Water"
+1013,Mixed Open,Water,Mixed Open to Water
+1113,Cropland,Water,Cropland to Water
+1213,Pasture,Water,Pasture to Water

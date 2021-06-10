@@ -1,0 +1,9 @@
+fiona
+geoalchemy2
+geopandas
+numpy
+pandas
+pathlib
+rasterio
+shapely
+sqlalchemy
