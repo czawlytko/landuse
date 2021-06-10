@@ -22,7 +22,8 @@ from rasterio.windows import Window
 import concurrent.futures
 import fiona
 import time
-import gdal
+# from osgeo import gdal
+# import gdal
 import numpy as np
 import os
 import multiprocessing as mp 

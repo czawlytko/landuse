@@ -127,7 +127,11 @@ name_dict = {
     "Scrub\\Shrub" : "Scrub/Shrub",
     "Shore Barren" : "Bare Shore",
     "Pasture" : "Pasture/Hay",
-    "Orchard Vineyard" : "Orchard/Vineyard"
+    "Orchard Vineyard" : "Orchard/Vineyard",
+    'Solar Other Impervious' : 'Solar Fields Impervious',
+    'Solar Barren' : 'Solar Fields Pervious Barren',
+    'Solar Herbaceous' : 'Solar Pervious Herbaceous',
+    'Solar Scrub/Shrub' :  'Solar Fields Pervious Scrub/Shrub',
     }
 
 st_dict = {

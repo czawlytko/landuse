@@ -20,7 +20,7 @@ import luconfig
 from helpers import etime
 import helpers
 import landuse_rev2 as landuse
-# import tc.TC_LU_Submodule_v1 as trees_over
+import tc.TC_LU_Submodule_v1 as trees_over
 import burn_in
 # import lu_change.lu_change_vector_v1_callable.py as lu_change_module
 
@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
         run_dp = False
         run_lu = True
-        run_tc = False
-        run_bi = False
+        run_tc = True
+        run_bi = True
         run_change = False
 
         # if not dp_outs.exist() and run_dp:

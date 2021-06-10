@@ -92,10 +92,11 @@ def datacheck(cf, psegs):
         sys.exit()
 
     pre = len(psegs)
-    psegs = psegs[(psegs.Class_name != 'NA')]
+    psegs = psegs[(psegs.Class_name != 'NA') | (psegs.Class_name == "")]
     post = len(psegs)
+    
     print(f'--Removed {pre-post} segments missing Class_name\n----Pre-removal : {pre}\n----Post-removal: {post}')
-
+    sys.exit()
     if 'lu' not in psegs.columns:
         psegs['lu'] = None
 
@@ -452,7 +453,7 @@ def p_maj_lu(cf, psegs, lc_vals, exclusions, threshold, batch_size, maj_replace)
             tmp.rename(columns={'ps_area':lu}, inplace=True) # rename total area column to be lu 
             lu_areas_list.append(tmp)
 
-        print("lu_areas_list: ", lu_areas_list)
+        # print("lu_areas_list: ", lu_areas_list)
         # merge all area estimates into one df on PID
         lu_area_df = lu_areas_list[0].copy()
         for l in range(1, len(lu_areas_list)): 
@@ -461,7 +462,7 @@ def p_maj_lu(cf, psegs, lc_vals, exclusions, threshold, batch_size, maj_replace)
 
         lu_area_df['max_lu'] = lu_area_df[lu_values].idxmax(axis=1) # max lu name
         lu_area_df['lu_area'] = lu_area_df[lu_values].max(axis=1) # max area value
-        print("lu_area_df: ",lu_area_df)
+        # print("lu_area_df: ",lu_area_df)
 
         #remove all uneeded results columns
         cols = ['PID', 'max_lu', 'lu_area']
@@ -833,9 +834,9 @@ def RUN(cf, test):
     else:
         print('--landuse.RUN() Test: ', test, type(test))
         psegsPath = f"{folder}/{cf}/input/data.gpkg" # output will swap 'input' to 'output' and layer 'psegs_lu'
-        inLayer = 'psegs'
+        inLayer = 'psegs_joined'
         outPath = psegsPath.replace('input','output')
-        outLayer = 'psegs_joined' # cd 
+        outLayer = 'psegs_lu'
 
 ##################################### 
 
@@ -1076,17 +1077,7 @@ def RUN(cf, test):
 
     # POPULATE lucode 
     psegs['lucode'] = 0
-    name_dict = {
-        "Low Vegetation" : "Herbaceous",
-        r"Scrub\\Shrub" : "Scrub/Shrub",
-        "Other Impervious Surfaces" : "Other Impervious Surface",
-        # "Crop" : "Cropland",
-        "Developed Barren" : "Bare Developed",
-        "Shore Barren" : "Bare Shore",
-        "Pasture" : r"Pasture/Hay",
-        "Orchard Vineyard" : r"Orchard/Vineyard",
-        "Timber Harvest": 'Harvested Forest'
-        }
+    name_dict = luconfig.name_dict
     # clean up lu names to match final format
     for k, v in name_dict.items():
         # print(k, " to ", v)
@@ -1110,7 +1101,7 @@ def RUN(cf, test):
     ########################
 
     sec_per_ps =  round(time.time() - cf_st) / len(psegs)
-    etime(cf, psegs, f"{cf} Main landuse complete! - {time.asctime()}\n({round(sec_per_ps, 4)} sec per pseg)", cf_st)
+    etime(cf, psegs, f"{cf} Main landuse pre-write complete! - {time.asctime()}\n({round(sec_per_ps, 4)} sec per pseg)", cf_st)
     b_log = open(batch_log_Path, "a")
     b_log.write(f"{cf} Main `landuse` complete {time.asctime()}")
     b_log.close()
