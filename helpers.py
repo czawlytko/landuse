@@ -237,5 +237,3 @@ def generate_ta_list(cf, folder):
     }
 
     return dict_dict
-
-

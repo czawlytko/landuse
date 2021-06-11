@@ -578,7 +578,7 @@ def luz(cf, psegs):
         elif luz == 'NAT':
             lu_name = 'Natural Succession'
         elif luz == 'TIM':
-            lu_name = 'Harvested Forest'
+            lu_name = 'Natural'
         elif luz in ('OV'): # rev2 6/1- removed CROP
             lu_name = 'Orchard/Vineyard'
         elif luz in ('CAFO', 'CATT'):
@@ -600,7 +600,7 @@ def luz(cf, psegs):
         elif luz in ('NAT', 'EXT'): # added EXT for rev2 from suspended to natural
             lu_name = 'Natural Succession'
         elif luz == 'TIM':
-            lu_name = 'Harvested Forest'
+            lu_name = 'Natural Succession'
         elif luz in ('CAFO', 'CATT'):
             lu_name = 'Pasture'
         elif luz == 'OV':
@@ -988,7 +988,7 @@ def RUN(cf, test):
     if st_dict[cf[5:7]] in ('PA', 'MD'):
         st_timb = time.time()
         df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']))]
-        sjoin_mp(psegs, "Harvested Forest", "timber sjoin", df1, anci_folder, timberPath, batch_size)
+        sjoin_mp(psegs, "Natural Succession", "timber sjoin", df1, anci_folder, timberPath, batch_size)
         etime(cf, psegs,   "State Timber Harvest anci sjoin", st_timb)
     else:
         print('Skipping State Timber Harvest anci sjoin, no anci for state')
@@ -1085,27 +1085,19 @@ def RUN(cf, test):
 
     ## Classification finished
 
-    """
-    TODO  if no lu apply adjacent lu with same Class_name instead of "Whatevers left"
-    """
 
-    # #Check for lu.isna() - how many? fill with majority LU from Matching Class_name segs in same parcel
-    # if (len(psegs[(psegs.lu.isna())])-len(psegs) > 0):
-    #     print(len(psegs[(psegs.lu.isna())])-len(psegs))
-    #     # apply lu from closest seg with the similar Class_name
-
-    # POPULATE lucode 
-    psegs['lucode'] = 0
     name_dict = luconfig.name_dict
     # clean up lu names to match final format
     for k, v in name_dict.items():
-        # print(k, " to ", v)
+        print(k, " to ", v)
         psegs['lu'] = psegs['lu'].replace(k, v, regex=True)
 
     print("\nOutput LU list: ", psegs.lu.unique(), "\n")
     if len(psegs[(psegs.lu.isna())]) != 0:
         print("No LU count: ", len(psegs[(psegs.lu.isna())]))
 
+    # POPULATE lucode 
+    psegs['lucode'] = 0
     # populate lucode field if value in dictionary
     for lu in psegs.lu.unique():
         if lu in luconfig.lu_code_dict.keys():
@@ -1137,13 +1129,4 @@ def RUN(cf, test):
        
     return psegs
 
-    # except Exception as e:
-    #     print(f"{cf} FAILED")
-    #     etime(cf, psegs,  f"main exception \n{e}", cf_st)
-    #     sec_per_ps =  round(time.time() - cf_st) / len(psegs)
-    #     print(f'{round(time.time() - cf_st) / len(psegs)} seconds per pseg')
-    #     b_log = open(batch_log_Path, "a")
-    #     b_log.write(f"{cf} Main landuse FAILED {time.asctime()}")    
-    #     b_log.close()
-    #     pass
 

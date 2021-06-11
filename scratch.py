@@ -8,7 +8,7 @@ import sys
 
 import luconfig
 
-def etime(cf, psegs, note, starttime):
+def etime(cf, note, starttime):
     folder = luconfig.folder
 
     # print text and elapsed time in HMS or Seconds if time < 60 sec
@@ -20,9 +20,6 @@ def etime(cf, psegs, note, starttime):
         print(f'making dir... {log_dir}')
     etime_file = Path(log_dir, "etlog.txt")
 
-    if 'lu' in psegs.columns:  # etime() is used before lu exists
-        print(f"----{round((len(psegs[(psegs.lu.notna())]))/len(psegs)*100, 2)}% lu classified")
-
     f = open(etime_file, "a")
     if elapsed > 60:
         f.write(f'--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n')
@@ -30,6 +27,34 @@ def etime(cf, psegs, note, starttime):
     else:
         f.write(f'--{note} runtime - {round(elapsed, 2)} sec\n')
         print(f'--{note} runtime - {round(elapsed, 2)} sec\n')
+    f.close()
+
+def lu_etime(cf, psegs, note, starttime):
+    # print text and write to log file 
+    # includes percent of psegs classified and time in HMS or Seconds if time < 60 sec
+
+    folder = luconfig.folder
+    elapsed = time.time()-starttime
+    log_dir = Path(f"{folder}/{cf}") # define as pathlib path object, allows pathlib's exists()
+
+    if not log_dir.exists():
+        Path.mkdir(log_dir)
+        print(f'making dir... {log_dir}')
+
+    etime_file = Path(log_dir, "etlog.txt")
+    pct = round((len(psegs[(psegs.lu.notna())]))/len(psegs)*100, 2)
+    if 'lu' in psegs.columns:  # etime() is used before lu exists
+        print(f"----{pct}% lu classified")
+
+    f = open(etime_file, "a")
+    if elapsed > 60:
+        logText = f'--{note} {pct} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n'
+    else:
+        logText = f'--{note} {pct} runtime - {round(elapsed, 2)} sec\n'
+
+    f.write()
+    print(f'--{note} {pct} runtime - {round(elapsed, 2)} sec\n')
+
     f.close()
 
 def tformat(elapsed_t):
@@ -144,3 +169,17 @@ def joinData(psegs, clean_columns=True):
     return psegs
 
 
+name_dict = {
+    "Low Vegetation" : "Herbaceous",
+    "Developed Barren" : "Bare Developed",
+    r"Scrub\\Shrub" : "Scrub/Shrub",
+    "Other Impervious Surfaces" : "Other Impervious Surface",
+    "Timber Harvest" : "Harvested Forest",
+    "Shore Barren" : "Bare Shore",
+    "Pasture" : "Pasture/Hay",
+    "Orchard Vineyard" : "Orchard/Vineyard",
+    'Solar Other Impervious' : 'Solar Field Impervious',
+    'Solar Barren' : 'Solar Field Barren',
+    'Solar Herbaceous' : 'Solar Field Herbaceous',
+    'Solar Scrub/Shrub' : 'Solar Field Scrub/Shrub',
+    }

@@ -125,17 +125,20 @@ lu_code_dict = {
     }
 
 # dictionary for fixing name orders and punctuations
+
 name_dict = {
     "Low Vegetation" : "Herbaceous",
-    "Scrub\\Shrub" : "Scrub/Shrub",
+    "Developed Barren" : "Bare Developed",
+    r"Scrub\\Shrub" : "Scrub/Shrub",
     "Other Impervious Surfaces" : "Other Impervious Surface",
+    "Timber Harvest" : "Harvested Forest",
     "Shore Barren" : "Bare Shore",
     "Pasture" : "Pasture/Hay",
     "Orchard Vineyard" : "Orchard/Vineyard",
-    'Solar Other Impervious' : 'Solar Fields Impervious',
-    'Solar Barren' : 'Solar Fields Pervious Barren',
-    'Solar Herbaceous' : 'Solar Pervious Herbaceous',
-    'Solar Scrub/Shrub' :  'Solar Fields Pervious Scrub/Shrub',
+    'Solar Other Impervious' : 'Solar Field Impervious',
+    'Solar Barren' : 'Solar Field Barren',
+    'Solar Herbaceous' : 'Solar Field Herbaceous',
+    'Solar Scrub/Shrub' : 'Solar Field Scrub/Shrub',
     }
 
 st_dict = {
