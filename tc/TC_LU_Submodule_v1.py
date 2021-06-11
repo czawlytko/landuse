@@ -73,7 +73,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     psegsPath = f"{folder}/{cf}/output/data.gpkg"
     parcels_gpkg = f"{folder}/{cf}/temp/temp_dataprep.gdb"
     out_gpkg = f"{folder}/{cf}/output/trees_over.gpkg" 
-    tiles_shp = f"{folder}/{cf}/temp/tc_tile_buff.shp"
+    tiles_shp = f"{folder}/{cf}/temp/tc_tile_buff.shp" # f"{folder}/{cf}/temp/{cf}_manual_dissolve.shp"
 
     #location of temp files needed for QGIS workflows will be written - can delete these after
     qgis_temp_files_path = Path(folder,cf,"temp_qgis_files")
@@ -132,7 +132,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
         # get unique ag and turf lu values
         allAg = []
         allLUS = list(set(list(psegs['lu'])))
-        oldAg = ['crop', 'orchard vineyard', 'pasture'] 
+        oldAg = ['Cropland', 'Pasture/Hay', 'Orchard/Vineyard']  # ['crop', 'orchard vineyard', 'pasture'] 
         for a in allLUS:
             al = a
             if a == None:
@@ -310,6 +310,9 @@ def runTCT(args):
     del ag
 
     forest = groupForest(forest, tct, tile, cf, NUM_CPUS)
+    note = str(tile) + " -- Created Forest Layer -- "
+    etime(cf, note, st)
+    st = time.time()
 
     note = str(tile) + " -- Removed TCT Buffers and Dissolved Forest -- "
     etime(cf, note, st)
@@ -427,56 +430,59 @@ def getForestFrag(under_acre, psegs, allTurf, tile, cf, NUM_CPUS):
         # dev classes
         dev = ['Buildings', 'Other Impervious Surfaces'] + allTurf
         under_acre.loc[:, 'area'] = under_acre['geometry'].area #get segmented forest area
+
         #separate into 2 dfs - less than and acre and over an acre
         over_acre = under_acre[under_acre['area'] >= 4047] #get patches over an acre
         under_acre = under_acre[under_acre['area'] < 4047] #get the forest chunks less than an acre
         note = str(tile) + "--Separated < acre and >= acre forest patches"
         etime(cf, note, st)
         st = time.time()
-        #for < acre - determine what each is touching (turf, ag, both, or neither?)
+
+        #for < acre - determine what will be tct and what will be toa
         under_acre = under_acre.reset_index()
         under_acre = under_acre[['Id', 'geometry']]
         sb_nonag = shared_border_mp(psegs[psegs['lu'].isin(dev)][['PSID', 'geometry']], under_acre, 'maj', NUM_CPUS)
         note = str(tile) + "--shared border length forest < an acre and dev psegs"
         etime(cf, note, st)
         st = time.time()
+
         # Class < acre segments based on what they are touching
-        under_acre.loc[:, 'lu'] = 'toa'
-        under_acre.loc[under_acre.Id.isin(sb_nonag), 'lu'] = 'tct' 
-        under_acre.loc[under_acre['lu'] == 'tct', 'logic'] = '< acre shared border > half dev'
-        under_acre.loc[under_acre['lu'] == 'toa', 'logic'] = '< acre shared border < half dev'
-        under_acre.loc[under_acre['lu'] == 'tct', 'lu_code'] = 2240
-        under_acre.loc[under_acre['lu'] == 'toa', 'lu_code'] = 3200
-        # split patches > acre into 2 dfs - one touching dev and one that is not
+        if not under_acre.empty:
+            under_acre.loc[:, 'lu'] = 'toa'
+            under_acre.loc[under_acre['lu'] == 'toa', 'logic'] = '< acre shared border < half dev'
+            under_acre.loc[under_acre['lu'] == 'toa', 'lu_code'] = 3200
+            if len(sb_nonag) > 0:
+                under_acre.loc[under_acre.Id.isin(sb_nonag), 'lu'] = 'tct' 
+                under_acre.loc[under_acre['lu'] == 'tct', 'logic'] = '< acre shared border > half dev'
+                under_acre.loc[under_acre['lu'] == 'tct', 'lu_code'] = 2240
+
+        # find patches > acre and < 72m wide
         over_acre = over_acre.reset_index()
         over_acre = over_acre[['Id', 'geometry']]
-        sb_nonag = shared_border_mp(psegs[psegs['lu'].isin(dev)][['PSID', 'geometry']], over_acre, 'maj', NUM_CPUS)
-        note = str(tile) + "--shared border forest >= an acre and dev psegs"
-        etime(cf, note, st)
-        st = time.time()
-        over_acre_nodev = over_acre[~over_acre['Id'].isin(sb_nonag)] #patches > acre not touching dev
-        over_acre = over_acre[over_acre['Id'].isin(sb_nonag)] #patches > acre touching dev
-        #find patches not touching dev > acre but < 72m wide
-        isWB = getWidth_mp(over_acre_nodev, 'Id', NUM_CPUS)
-        over_acre_nodev = over_acre_nodev[over_acre_nodev['Id'].isin(isWB)]
-        over_acre_nodev = over_acre_nodev.reset_index()[['geometry']]
-        over_acre_nodev.loc[:, 'lu'] = 'toa'
-        over_acre_nodev.loc[:, 'logic'] = '> acre < 72m wide not touching dev'
-        over_acre_nodev.loc[:, 'lu_code'] = 3200
-        note = str(tile) + "--Got width for patches > an acre and not touching dev"
-        etime(cf, note, st)
-        st = time.time()
-         #find patches touching dev > acre but < 72m wide
         isWB = getWidth_mp(over_acre, 'Id', NUM_CPUS)
         over_acre = over_acre[over_acre['Id'].isin(isWB)]
-        over_acre = over_acre.reset_index()[['geometry']]
-        if over_acre.empty is False:
+        note = str(tile) + "--Got width for patches > an acre"
+        etime(cf, note, st)
+        st = time.time()
+
+        # use shared border to split by tct and toa
+        sb_nonag = shared_border_mp(psegs[psegs['lu'].isin(dev)][['PSID', 'geometry']], over_acre, 'maj', NUM_CPUS)
+        note = str(tile) + "--shared border forest >= an acre and < 72m wide with dev psegs"
+        etime(cf, note, st)
+        st = time.time()
+        over_acre_nodev = over_acre[~over_acre['Id'].isin(sb_nonag)][['geometry']] #patches > acre not touching dev
+        over_acre = over_acre[over_acre['Id'].isin(sb_nonag)][['geometry']] #patches > acre touching dev
+
+        # update columns
+        if not over_acre_nodev.empty:
+            over_acre_nodev.loc[:, 'lu'] = 'toa'
+            over_acre_nodev.loc[:, 'logic'] = '> acre < 72m wide not touching dev'
+            over_acre_nodev.loc[:, 'lu_code'] = 3200
+        if not over_acre.empty:
             over_acre.loc[:, 'lu'] = 'tct'
             over_acre.loc[:, 'logic'] = '> acre < 72m wide touching dev'
             over_acre.loc[:, 'lu_code'] = 2240
-        note = str(tile) + "--Got width for patches > an acre and touching dev"
-        etime(cf, note, st)
-        st = time.time()
+
         #put all data back into 1 gdf
         under_acre = under_acre.append(over_acre)
         del over_acre
@@ -795,10 +801,13 @@ def shared_border_mp(ag_segs, forest, r_field, NUM_CPUS):
             r_field - string denoting if to return majority ag Ids (maj) or Ids encompassed by ag (all_ag)
     Returns: results - list of forest patch Ids that will be classed as trees in ag (> half of border is shared with ag)
     """
+    st = time.time() # ONLY NEED FOR TESTING
     ag_for = sjoin_mp6(ag_segs, 10000, 'intersects', ['Id', 'PSID'], forest, NUM_CPUS)
+    elapsed = time.time()-st # ONLY NEED FOR TESTING
+    print("Shared border sjoin time: ", elapsed) # ONLY NEED FOR TESTING
+
     if len(ag_for) > 0:
         ag = list(set(list(ag_for['Id']))) #unique forest patches
-
         cpus_minus_1 = NUM_CPUS
         if len(ag) < cpus_minus_1:
             cpus_minus_1 = len(ag)
@@ -808,6 +817,7 @@ def shared_border_mp(ag_segs, forest, r_field, NUM_CPUS):
         else:
             batch_size = int(batch_size) + 1
 
+        st = time.time() # ONLY NEED FOR TESTING
         chunk_iterator = []
         for i in range(cpus_minus_1):
             mn, mx = i * batch_size, (i+1) * batch_size
@@ -816,6 +826,11 @@ def shared_border_mp(ag_segs, forest, r_field, NUM_CPUS):
             t_ag = ag_segs[ag_segs['PSID'].isin(list(t_sj['PSID']))]
             args = t_ag, t_for, t_sj, r_field
             chunk_iterator.append(args)
+        elapsed = time.time()-st # ONLY NEED FOR TESTING
+        print("Shared border build chunks time: ", elapsed) # ONLY NEED FOR TESTING
+
+        print("Forest count: ",len(forest))
+        print("sjoin count: ",len(ag_for))
 
         pool = mp.Pool(processes=cpus_minus_1)
         sb_results = pool.map(shared_border, chunk_iterator)
@@ -850,19 +865,20 @@ def shared_border(args):
         totalShrdBorder = 0
         pseg_list = list(sjoinSeg[sjoinSeg['Id'] == patch]['PSID'])  
         patchGeo = list(df2[df2['Id'] == patch]['geometry'])[0]  
+        half_border = patchGeo.length / 2 # if tot count exceeds this it is majority
         for pseg in pseg_list:
             count += 1
             psegGeo = list(df1[df1['PSID'] == pseg]['geometry'])[0]
             try:
                 border = patchGeo.intersection(psegGeo) 
                 totalShrdBorder += border.length
+                if r_field == 'maj' and totalShrdBorder > half_border:
+                    forest_patches.append(patch)
+                    break # once it exceeds majority - break from current forest patch
             except:
                 ecount += 1
-        if r_field == 'maj':
-            non_shrd_border = patchGeo.length - totalShrdBorder
-            if totalShrdBorder > non_shrd_border:
-                forest_patches.append(patch)
-        elif r_field == 'all_ag':
+
+        if r_field == 'all_ag':
             if totalShrdBorder / patchGeo.length > 0.85: 
                 forest_patches.append(patch)
                 
@@ -1044,7 +1060,6 @@ def getWidth(args):
         maxDist, maxPt = findCenter(row['geometry'], bounds, True) # first pass
         if maxDist*2 < 72: #only need to do second pass if first pass is under threshold
             mx_b = maxPt.bounds[0:2]
-            # maxDist = maxDist * 2
             bounds = (mx_b[0] - maxDist, mx_b[1] - maxDist, mx_b[0] + maxDist, mx_b[1] + maxDist)
             if bounds[0] < 0:
                 bounds = (0.0, bounds[1], bounds[2], bounds[3])
@@ -1103,5 +1118,7 @@ def findCenter(poly, bounds, firstPass):
                 if d > maxDist: #distance is largest so far - record it
                     maxDist = d
                     maxPt = p
+                    if maxDist* 2 >= 72: # stop looping if it exceeds the min threshold
+                        return maxDist, maxPt
 
     return maxDist, maxPt

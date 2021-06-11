@@ -249,9 +249,8 @@ def runEnviro(psegs, densePIDs):
     #Class ag parcels
     allLUS = list(set(list(psegs['lu'])))
     allAg = []
-    allAg = []
     # LU landuse land use values
-    oldAg = ['Cropland', 'Orchard/Vineyard', 'Pasture'] #REV2 6/3 - old ['crop', 'orchard vineyard', 'pasture'] 
+    oldAg = ['Cropland', 'Orchard/Vineyard', 'Pasture']  # ['crop', 'orchard vineyard', 'pasture']  
     for a in allLUS:
         al = a
         if a == None:

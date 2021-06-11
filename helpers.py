@@ -86,34 +86,89 @@ def transfer_files(source, destination):
     pid_list.append(run_process.pid)
 
 
-def join_data():
-    """
-join_data.py
-Authors: Jacob Czawlytko and Patrick MacCabe
-Purpose: Join required tables to psegs within a GPKG and swap
+def make_ta_dict(cf, anci_folder, folder):
 
-"""
+    files = os.listdir(f'{folder}/{cf}/input')
+    pattern = f"{cf}_landcover_????_*.tif"
+    for entry in files:
+        if fnmatch.fnmatch(entry, pattern):
+            print(f"Found landcover file: {entry}")
+            lc_path = f'{folder}/{cf}/input/{entry}'
+            break
+    if not arcpy.Exists(lc_path):
+        print(f"Failed to open LC: {lc_path}" )
+        exit()
+    LUZ_values = luconfig.LUZ_values
+    # LUZ_values = ['AG_GEN', 'BAR', 'CAFO', 'CATT', 'CENT', 'CONS', 'CROP', 'DEC', 'EVE', 'EXT', 'FALL', 'NAT', 'OV', 'PAS', 'POUL', 'SUS', 'TG', 'TIM', 'WAT', 'WET', 'WET_NT', 'WET_T', 'no_luz']
 
-import geopandas as gpd
-import time
-import os
-# from lu_utilities import transfer
-import sys
-import luconfig
+    lc_pid = {
+        'name' : "landcover",
+        'path': lc_path,
+        'zone': 'PID',
+        'vals' : [1,2,3,4,5,6,7,8,9,10,11,12]
+        }
 
+    c1719_sid = {
+        'name' : "CDL 2017-2019",
+        'path': f'{anci_folder}/CDL/CDL_2017_2019_4class_maj_1m.tif',
+        'zone': 'SID',
+        'vals' : [0,1,2,3,4]
+        }
 
-def etime(folder, cf, note, starttime):
-    # print text and elapsed time in HMS or Seconds if time < 60 sec
-    elapsed = time.time() - starttime
-    f = open(f"{folder}/{cf}/etime_log.txt", "a")
-    if elapsed > 60:
-        f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
-        print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
-    else:
-        f.write(f'{cf}--{note} runtime - {round(elapsed, 2)} sec\n\n')
-        print(f'{cf}--{note} runtime - {round(elapsed, 2)} sec')
-    f.close()
+    c18_sid = {
+        'name' : "CDL 2018",
+        'path': f'{anci_folder}/CDL/cdl_2018_4class_maj_1m.tif',
+        'zone': 'SID',
+        'vals' : [0,1,2,3,4]
+        }
 
+    c18_pid = {
+        'name' : "CDL 2018",
+        'path': f'{anci_folder}/CDL/cdl_2018_4class_maj_1m.tif',
+        'zone': 'PID',
+        'vals' : [0,1,2,3,4]
+        }
+
+    n16_sid = {
+        'name' : "NLCD",
+        'path': f'{anci_folder}/NLCD/NLCD_2016_pashay_maj_1m.tif',
+        'zone': 'SID',
+        'vals' : [0,1]
+        }
+
+    n16_pid = {
+        'name' : "NLCD",
+        'path': f'{anci_folder}/NLCD/NLCD_2016_pashay_maj_1m.tif',
+        'zone': 'PID',
+        'vals' : [0,1]
+        }
+
+    luz_sid = {
+        'name' : "Local Use or Zoning",
+        'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
+        'zone': 'SID',
+        'vals' : LUZ_values
+        }
+
+    luz_pid = {
+        'name' : "Local Use or Zoning",
+        'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
+        'zone': 'PID',
+        'vals' : LUZ_values
+        }
+
+    # list of rasters and the zone units
+    dict_dict = {'lc_pid': lc_pid,
+                'c1719_sid': c1719_sid,
+                'c18_sid': c18_sid,
+                'c18_pid': c18_pid,
+                'n16_sid': n16_sid,
+                'n16_sid': n16_pid,
+                'luz_sid': luz_sid,
+                'luz_pid': luz_pid
+                }
+
+    return dict_dict
 
 def generate_ta_list(cf, folder):
 
@@ -182,4 +237,5 @@ def generate_ta_list(cf, folder):
     }
 
     return dict_dict
+
 

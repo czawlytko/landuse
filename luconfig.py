@@ -6,7 +6,7 @@ batch_log_Path = f"{folder}/batch_log.txt"
 
 dest  = f""
 test = True
-TC_CPUS = 5 # num of cores to be used to help divide total core count and balance processes.
+TC_CPUS = 15 # num of cores to be used to help divide total core count and balance processes.
 anci_dict = {
     'landfillPath' : r"20172018_Landfills/CBW_digitized_landfills_2017_2018_20210517.shp", # updated 4/26/21
     'solarPath' : r"solarfields/CBW_solarAI_20172018.shp", # updated 4/26/21
@@ -28,6 +28,9 @@ dp_file_list = [
         f"",# All of the tabulate area .csvs (named by their value for each SID/PID key)
         f"ps_segs.tif",
         f"ps_parcels.tif"]
+
+LUZ_values = ['AG_GEN', 'BAR', 'CAFO', 'CATT', 'CENT', 'CONS', 'CROP', 'DEC', 'EVE', 'EXT', 'FALL', 'NAT', 'OV', 'PAS', 'POUL', 'SUS', 'TG', 'TIM', 'WAT', 'WET', 'WET_NT', 'WET_T', 'no_luz']
+
 
 lu_code_dict = {
     'Emergent Wetlands' : 5000, # was 2

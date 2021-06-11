@@ -49,7 +49,7 @@ def read_anci(anci_folder, ancipath, bounds):
 
     return anci
 
-def datacheck(cf, psegs):
+def datacheck(cf, psegs, folder):
 
     """
     Revised: 4/20/21
@@ -73,7 +73,8 @@ def datacheck(cf, psegs):
     's_c18_0', 's_c18_1', 's_c18_2', 's_c18_3', 's_c18_4',
     'p_c18_0', 'p_c18_1', 'p_c18_2', 'p_c18_3', 'p_c18_4',
     's_c1719_0', 's_c1719_1', 's_c1719_2', 's_c1719_3', 's_c1719_4',
-    's_n16_0', 's_n16_1', 'p_luz','s_luz',
+    's_n16_0', 's_n16_1', 
+    'p_luz','s_luz',
     'logic', 'lu', 'geometry']
 
     # required values that could realistically be missing from an entire county resulting in no column
@@ -81,7 +82,8 @@ def datacheck(cf, psegs):
             'p_lc_2',
             's_c18_1', 's_c18_2', 's_c18_3', 's_c18_4',
             'p_c18_1', 'p_c18_2', 'p_c18_3', 'p_c18_4',
-            's_c1719_1', 's_c1719_2', 's_c1719_3', 's_c1719_4'
+            's_c1719_1', 's_c1719_2', 's_c1719_3', 's_c1719_4',
+            'p_luz','s_luz',
             ]
 
     non_int32_columns = [ 'Class_name','p_luz','s_luz', 'logic', 'lu', 'geometry']
@@ -92,28 +94,36 @@ def datacheck(cf, psegs):
         sys.exit()
 
     pre = len(psegs)
-    psegs = psegs[(psegs.Class_name != "")]
+    LC_classes = psegs.Class_name.unique()
+    print(LC_classes)
+    psegs = psegs[(psegs.Class_name.isin(['Tree Canopy Over Roads', 'Low Vegetation', 'Tree Canopy Over Other Impervious Surfaces', 'Other Impervious Surfaces', 'Tree Canopy', 'Scrub\\Shrub', 'Roads', 'Buildings', 'Water', 'Tree Canopy Over Structures','Barren']))]
+    # psegs = psegs[(psegs.Class_name != "")] # this removed psegs we watned to keep
     post = len(psegs)
+    LC_classes = psegs.Class_name.unique()
+    print(LC_classes)
 
     print(f'--Removed {pre-post} segments missing Class_name\n----Pre-removal : {pre}\n----Post-removal: {post}')
 
-    if 'lu' not in psegs.columns:
-        psegs['lu'] = None
+    ADD_cols = ['lu', 'logic', 's_luz', 'p_luz']
+    for col in ADD_cols:
+        if col not in psegs.columns:
+            print(f"adding {col} column as Str/None")
+            psegs[col] = None
 
-    if 'logic' not in psegs.columns:
-        psegs['logic'] = None
+
 
     if ('Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads', 'Tree Canopy Over Structures') in psegs.Class_name.unique():
         print('Reclassing TC over classes')
-        # psegs['Class_name'] = psegs['lu'].replace(k, v, regex=True)
         tcreclass_st = time.time()
-        psegs['Class_name'] = psegs.loc[(psegs.Class_name.isin(['Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads','Tree Canopy Over Structures'])), 'logic'] = 'tc landcover'
+        psegs['logic'] = psegs.loc[(psegs.Class_name.isin(['Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads','Tree Canopy Over Structures'])), 'logic'] = 'TC Over Landcover'
+        psegs['lu'] = psegs.loc[(psegs.Class_name.isin(['Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads','Tree Canopy Over Structures'])), 'lu'] = psegs.Class_name.replace("Tree Canopy Over ", "", regex=True)
         psegs['Class_name'] = psegs.loc[(psegs.Class_name.isin(['Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads','Tree Canopy Over Structures'])), 'Class_name'] = psegs.Class_name.replace("Tree Canopy Over ", "", regex=True)
-        etime(cf, psegs, "Reclassed TC Over classes", tcreclass_st)
+        etime(cf, psegs,  "Reclassed TC Over classes", tcreclass_st)
         
     if (len(psegs.PSID.unique()) != len(psegs) or 'PSID' not in psegs.columns):
         print("Generating unique PSIDs")
         psegs['PSID'] = [int(x) for x in range(1, len(psegs) + 1)]
+
 
     print(f"PSEG rows   : {len(psegs)}")
     print(f"Unique PSIDs: {len(psegs.PSID.unique())}")
@@ -130,6 +140,11 @@ def datacheck(cf, psegs):
             psegs["ps_area"] = psegs['geometry'].area
             etime(cf, psegs, "calculated 'ps_area'", calc_ps_area_st)
 
+    for col in psegs.columns:
+        if col not in reqcolumns:
+            print(f'Pseg file has a column that is not required! : deleting {col}!')
+            psegs = psegs.drop(columns=[col])
+
     for col in reqcolumns:
         if col not in psegs.columns:
             if col in flex_requiredcolumns:
@@ -139,15 +154,14 @@ def datacheck(cf, psegs):
             else:
                 print(f"Required column missing! - {col}")
 
-    for col in psegs.columns:
-        if col not in reqcolumns:
-            print(f'Pseg file has a column that is not required! : deleting {col}!')
-            psegs = psegs.drop(columns=[col])
-        else:
-            if col not in non_int32_columns:
-                psegs[col] = psegs[col].fillna(0)
-                psegs = psegs.astype({col: 'int32'})
     
+        
+        if col not in non_int32_columns:
+            psegs[col] = psegs[col].fillna(0)
+            psegs = psegs.astype({col: 'int32'})
+    
+    print(psegs.dtypes)
+
     return psegs
 
 
@@ -214,7 +228,7 @@ def get_ps_area(cf, psegs, batch_size):
         print(f"--Chunk: {i}/{num_chunks} PSID {mn} thru {mx}")
         psegs.loc[mn:mx, 'ps_area'] = psegs[mn:mx].geometry.area
 
-    etime(cf, psegs, 'get_ps_area', ps_area_st)
+    etime(cf, psegs,  'get_ps_area', ps_area_st)
 
 
 def sjoin_and_border(args):
@@ -369,6 +383,8 @@ def adjacency_mp(psegs, newlu, newlogic, df1, df2, btype, minborder, batch_size)
     apply_lu(psegs, bordering_results, newlu, newlogic)
 
 def ruleset1(cf, psegs):
+
+    folder = luconfig.folder
     print(f'--Start ruleset1() {time.asctime()}')
     rs1_st = time.time()
     # direct LC to LU classes
@@ -385,7 +401,7 @@ def ruleset1(cf, psegs):
 
     etime(cf, psegs, 'Ruleset 1', rs1_st)
 
-def ag_cdl(cf, psegs): # classify psegs lu by CDL tabulations, no spatial operations
+def ag_cdl(cf, psegs, folder): # classify psegs lu by CDL tabulations, no spatial operations
     print(f'--Start ag_cdl()  {time.asctime()}')
     cdl_st = time.time()
     
@@ -415,7 +431,7 @@ def ag_cdl(cf, psegs): # classify psegs lu by CDL tabulations, no spatial operat
     psegs.loc[(psegs.lu.isna()) & (psegs.Class_name == 'Low Vegetation') & (psegs.p_area > 4046*5) & (psegs.s_c18_3 > (psegs.s_area*0.2)), 'logic'] = "s_c18_3 > 20%"
     psegs.loc[(psegs.lu.isna()) & (psegs.Class_name == 'Low Vegetation') & (psegs.p_area > 4046*5) & (psegs.s_c18_3 > (psegs.s_area*0.2)), 'lu'] = "Orchard/Vineyard" + " " + psegs['Class_name']
 
-    etime(cf, psegs, 'ag_cdl', cdl_st)
+    etime(cf, psegs,  'ag_cdl', cdl_st)
 
 def p_maj_lu(cf, psegs, lc_vals, exclusions, threshold, batch_size, maj_replace):
     """
@@ -500,7 +516,7 @@ def p_maj_lu(cf, psegs, lc_vals, exclusions, threshold, batch_size, maj_replace)
             psids = list(set(list(psegs[((psegs.lu.isna()) | (psegs.lu == 'ag_gen')) & (psegs.Class_name.isin(lc_vals)) & (psegs.PID.isin(pids))]['PSID'])))
             psegs.loc[psegs['PSID'].isin(psids), 'lu'] = lu
             psegs.loc[psegs['PSID'].isin(psids), 'logic'] =  'majority lu > ' + str(threshold) + " and MajRep:" + str(maj_replace) 
-        etime(cf, psegs,f'majority lu MajRep:{str(maj_replace)}', mlu_st)
+        etime(cf, psegs, f'majority lu MajRep:{str(maj_replace)}', mlu_st)
     else:
         print(f"lu_values is empty...\n {lu_values} \n Full psegs lu:{psegs.lu.unique()}")
 
@@ -514,6 +530,7 @@ def natural_succession(cf, psegs, batch_size):
 
     # Large proportion of TC in parcel and small vegetation
     # rev2 5/21 - changed lc3/p_area from 70% to 45%
+    
     psegs.loc[(psegs.lu.isna()) & (psegs.s_area < 1000) & (psegs.s_luz != "TG") & (psegs.Class_name.isin(['Low Vegetation', 'Scrub\\Shrub'])) & ((psegs.p_lc_3 > (psegs.p_area * 0.45))), 'logic'] = r"70% TC parcel,  s_area < 1000"
     psegs.loc[(psegs.lu.isna()) & (psegs.s_area < 1000) & (psegs.s_luz != "TG") &  (psegs.Class_name.isin(['Low Vegetation', 'Scrub\\Shrub'])) & ((psegs.p_lc_3 > (psegs.p_area * 0.45))), 'lu'] = "Natural Succession" + " " + psegs['Class_name']
 
@@ -532,13 +549,13 @@ def natural_succession(cf, psegs, batch_size):
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub'])) & (psegs.p_area > 4046) & (psegs.s_area <= 5000) & (psegs.s_luz != "TG") ]
     df2 = psegs[(psegs.Class_name == 'Tree Canopy') & (psegs.s_area >= 10000) & (psegs.p_area > 4046)]
     adjacency_mp(psegs, 'Natural Succession', 'Nat Big TC adj 1', df1, df2, 'percent', 0.7 , batch_size)
-    etime(cf, psegs, "Natural Sucession adjacent 1/3 (LV, B)", nat_adj_st)
+    etime(cf, psegs,  "Natural Sucession adjacent 1/3 (LV, B)", nat_adj_st)
 
     nat_adj2_st = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Scrub\\Shrub'])) & (psegs.p_area > 4046)&  (psegs.s_luz != "TG") ]
     df2 = psegs[(psegs.Class_name == 'Tree Canopy') & (psegs.s_area >= 10000) & (psegs.p_area > 4046)]
     adjacency_mp(psegs, 'Natural Succession', 'Nat Big TC adj 2', df1, df2, 'minimum', 0, batch_size)
-    etime(cf, psegs, "Natural Sucession adjacent 2/3 (SS)", nat_adj2_st)
+    etime(cf, psegs,  "Natural Sucession adjacent 2/3 (SS)", nat_adj2_st)
 
 def luz(cf, psegs):
     # revised 4/20/21 to not reclass buildings in CAFO, CATT, and POUL 
@@ -616,7 +633,7 @@ def luz(cf, psegs):
         psegs.loc[(psegs.lu.isna()) & (psegs.Class_name.isin([['Other Impervious Surfaces']])) & (psegs.s_luz == luz) , 'logic'] = f"s_luz {luz} maj"
         psegs.loc[(psegs.lu.isna()) & (psegs.Class_name.isin([['Other Impervious Surfaces']])) & (psegs.s_luz == luz) , 'lu'] = luz + " " + psegs['Class_name']
 
-    etime(cf, psegs, 'luz', luz_st)
+    etime(cf, psegs,  'luz', luz_st)
 
 
 def solar(psegs, ancipath, newlogic):
@@ -650,7 +667,7 @@ def solar(psegs, ancipath, newlogic):
             myClass_name = psegs.loc[psegs['SID'] == i].Class_name.values[0]  # get seg lc value as string
             psegs.loc[psegs["SID"] == i, 'lu'] = f"Solar {myClass_name}"
 
-    etime(cf, psegs, "solar", solar_st)
+    etime(cf, psegs,  "solar", solar_st)
 
 
 ## TODO REMOVE, OLD
@@ -677,7 +694,7 @@ def here(psegs, ancipath, newlu, newlogic):
             psegs.loc[psegs["SID"] == i, 'lu'] = newlu
 
     print(f'{len(sj.SID.unique())} segs found with HERE data')
-    etime(cf, psegs, f"HERE ", here_st)
+    etime(cf, psegs,  f"HERE ", here_st)
 
 
 def lcmap_timber_mp(psegs, thlu, thlogic, nslu, nslogic, df1, anci_folder, timHarRasPath, sucAgeRasPath, batch_size):
@@ -818,7 +835,7 @@ def RUN(cf, test):
         print('--landuse.RUN() Test: ', test, type(test))
         # psegsPath = r"B:/landuse/testing_subsets/psegs_sub4.gpkg" # for checking nat succession
         # psegsPath = r"B:/landuse/nat_testing/psegs_sub_edge.gpkg" # for checking edge NA data
-        inLayer = 'psegs'
+        # inLayer = 'psegs'
 
         # make output name with iteration
         vnums = []
@@ -851,12 +868,13 @@ def RUN(cf, test):
     ###  ACTION ********************************************************
     try:
         psread_st = time.time()
-        psegs = gpd.read_file(psegsPath, layer=inLayer)
-        etime(cf, psegs, f"psegs read in", psread_st)
+        print(f"Start reading psegs {time.asctime()}")
+        psegs = gpd.read_file(psegsPath, layer=inLayer, driver='GPKG')
+        etime(cf, psegs,  f"psegs read in", psread_st)
         print("psegs dtypes: \n", psegs.dtypes)
-        for layername in fiona.listlayers(psegsPath):
-            with fiona.open(psegsPath, layer=layername) as src:
-                print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
+        # for layername in fiona.listlayers(psegsPath):
+        #     with fiona.open(psegsPath, layer=layername) as src:
+        #         print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
 
     except:
         print("ERROR! psegsPath failed to read...")
@@ -866,14 +884,14 @@ def RUN(cf, test):
                 print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
 
 
-    psegs = datacheck(cf, psegs)
+    psegs = datacheck(cf, psegs, folder)
 
     ruleset1(cf, psegs)  # run ruleset 1 - populates lu and logic fields
 
     st_here = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name == 'Low Vegetation')]
     sjoin_mp(psegs, "Turf", "HERE turf subset", df1, anci_folder, anci_dict['herePath'], batch_size)
-    etime(cf, psegs, "HERE turf sjoin", st_here)
+    etime(cf, psegs,  "HERE turf sjoin", st_here)
 
     # rev2 5/20 - changed from p_area to ps_area 
     # rev2 6/1 - added OR statement to include s_LUZ TG without ps_area limit
@@ -881,14 +899,14 @@ def RUN(cf, test):
     df1 = psegs[((psegs.lu.isna()) & (psegs.Class_name == 'Low Vegetation') & (psegs.ps_area < 1000)) | ((psegs.lu.isna()) & (psegs.Class_name == 'Low Vegetation') & (psegs.p_area < 4046*5) & (psegs.s_luz == "TG"))]
     df2 = psegs[(psegs.Class_name == 'Buildings')]
     adjacency_mp(psegs, 'Turf', 'Building turf', df1, df2, 'minimum', 0, batch_size)
-    etime(cf, psegs,  "buildings", st_buildings)
+    etime(cf, psegs,   "buildings", st_buildings)
 
     # Added rev2 5/6/2021
     st_buildings2 = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name == 'Low Vegetation') & (psegs.ps_area < 1000)]
     df2 = psegs[(psegs.Class_name == 'Low Vegetation') & (psegs.logic == 'building turf')]
     adjacency_mp(psegs, 'Turf', 'adj to building turf', df1, df2, 'minimum', 0, batch_size)
-    etime(cf, psegs, "buildings2", st_buildings2)
+    etime(cf, psegs,  "buildings2", st_buildings2)
 
     # print("BUFFER TEST")
     # if not os.path.isfile(BuildingsBufferPath):
@@ -899,7 +917,7 @@ def RUN(cf, test):
     # # st_here = time.time()
     # # lv_dfq1 = """df1 = psegs[(psegs.s_area < 150 & (psegs.Class_name == 'Low Vegetation')]"""
     # # sjoin_mp(psegs, "Turf Herbaceous", "Building Buffer sj", lv_dfq1, BuildingsBufferPath, batch_size)
-    # # etime(cf, psegs, "HERE turf sjoin", st_here)
+    # # etime(cf, psegs,  "HERE turf sjoin", st_here)
     ###############
 
     # rev2 5/10: reordered from step ~7 to step ~5
@@ -909,53 +927,53 @@ def RUN(cf, test):
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']) ) & (psegs.s_area < 2000) & ((psegs.s_c18_1 + psegs.s_c18_2 + psegs.s_c18_3 + psegs.s_c18_4) < (psegs.s_area*0.5))]
     df2 = psegs[(psegs.Class_name == 'Roads')]
     adjacency_mp(psegs, 'Suspended Succession', 'roadside sus', df1, df2, 'percent', 0.25, batch_size) # switched from adjacent at all to 25% of total perimeter must intersect with road
-    etime(cf, psegs, "Road-side Suspended Succession Adjacency", st_roads)
+    etime(cf, psegs,  "Road-side Suspended Succession Adjacency", st_roads)
 
     # reference CDL and NCLD tabulations for Crp, OrVin, and Pas
-    ag_cdl(cf, psegs)
+    ag_cdl(cf, psegs, folder)
 
     # TODO maybe swap to shared border
     # rev2 5/10 - added 10k s_area threshold, 5/20 excluding s_luz CROP, 6/1 added overwriting natural succession LU
     st_trans = time.time()
     df1 = psegs[((psegs.lu.isna()) | (psegs.lu.str.contains("Natural Succession"))) & (~psegs.s_luz.isin(['CROP', 'PAS', 'OV'])) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']) & (psegs.s_area < 10000))]
     sjoin_mp(psegs, "Suspended Succession", "transmission lines anci", df1, anci_folder, anci_dict['transPath'], batch_size)
-    etime(cf, psegs,  "Suspended Succession - Transmission Lines lbs sjoin_mp", st_trans)
+    etime(cf, psegs,   "Suspended Succession - Transmission Lines lbs sjoin_mp", st_trans)
 
     bar_uac_sj = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name == 'Barren')]
     sjoin_mp(psegs, "Developed", "Census UAC sjoin", df1, anci_folder, anci_dict['UACPath'], batch_size)
-    etime(cf, psegs, "Developed Barren UAC sjoin", bar_uac_sj)
+    etime(cf, psegs,  "Developed Barren UAC sjoin", bar_uac_sj)
 
     # rev2 5/28 - moved up from just above lcmap timber harvest
     st_lfill = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']))]
     sjoin_mp(psegs, "Suspended Succession", "landfill sjoin", df1, anci_folder, anci_dict['landfillPath'], batch_size)
-    etime(cf, psegs, "Suspended landfill sjoin_mp", st_lfill)
+    etime(cf, psegs,  "Suspended landfill sjoin_mp", st_lfill)
 
     st_mines = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']))]
     sjoin_mp(psegs, "Natural Succession", "mines anci", df1, anci_folder, anci_dict['minePath'], batch_size)
-    etime(cf, psegs, "Mines anci sjoin", st_mines)
+    etime(cf, psegs,  "Mines anci sjoin", st_mines)
 
     # TODO - adjust size threshold, "shared border:total border", secondary adjacency to the first round results.
     st_bareshore = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name == 'Barren') & (psegs.s_area < 1000)]
     df2 = psegs[(psegs.Class_name == 'Water') & (psegs.s_area > 15)]
     adjacency_mp(psegs, 'Shore', 'bar adj to wat', df1, df2, 'percent', 0.3, batch_size)
-    etime(cf, psegs, "Shore Barren 1", st_bareshore) 
+    etime(cf, psegs,  "Shore Barren 1", st_bareshore) 
 
     st_bareshore2 = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name == 'Barren')]
     df2 = psegs[(psegs.lu == 'Shore Barren')]
     adjacency_mp(psegs, 'Shore', 'bar adj to shore', df1, df2, 'minimum', 0, batch_size)
-    etime(cf, psegs, "Shore Barren 2", st_bareshore2) 
+    etime(cf, psegs,  "Shore Barren 2", st_bareshore2) 
 
     # TODO - possibly swap to sjoin_mp to filter psegs.
 
     st_solar = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Buildings', 'Scrub\\Shrub', 'Barren', 'Other Impervious Surfaces']))]
     sjoin_mp(psegs, "Solar", "solar sjoin", df1, anci_folder, anci_dict['solarPath'], batch_size)
-    etime(cf, psegs, "Solar anci sjoin", st_solar)
+    etime(cf, psegs,  "Solar anci sjoin", st_solar)
 
     # Map natural succession based on LC and seg size, contains TWO adjacency_mp() functions
     # rev1 - new submodel
@@ -971,7 +989,7 @@ def RUN(cf, test):
         st_timb = time.time()
         df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']))]
         sjoin_mp(psegs, "Harvested Forest", "timber sjoin", df1, anci_folder, timberPath, batch_size)
-        etime(cf, psegs,  "State Timber Harvest anci sjoin", st_timb)
+        etime(cf, psegs,   "State Timber Harvest anci sjoin", st_timb)
     else:
         print('Skipping State Timber Harvest anci sjoin, no anci for state')
 
@@ -979,10 +997,11 @@ def RUN(cf, test):
     th_st = time.time()
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren']))]
     lcmap_timber_mp(psegs, 'Harvested Forest', 'lcmap clearing', 'Natural Succession', 'LCMAP clearing before 2015', df1, anci_folder, anci_dict['timHarRasPath'], anci_dict['sucAgeRasPath'],  10000)
-    etime(cf, psegs, 'LCMAP timber harvest', th_st)
+    etime(cf, psegs,  'LCMAP timber harvest', th_st)
 
     # map LUZ values
     # rev2 5/10: reordered luz back to below natural_succession().
+
     luz(cf, psegs)  
 
     maj_lc_vals = ['Low Vegetation', 'Barren', 'Scrub\\Shrub']
@@ -1017,7 +1036,7 @@ def RUN(cf, test):
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']))]
     df2 = psegs[(psegs.lu.isin(["Natural Succession Herbaceous", "Natural Succession Scrub\\Shrub"]))]
     adjacency_mp(psegs, 'Natural Succession', 'lvb adj to nat sus', df1, df2, 'minimum', 0, batch_size)
-    etime(cf, psegs, "Remnant Adj to Natural Succession", st_remain_nat) 
+    etime(cf, psegs,  "Remnant Adj to Natural Succession", st_remain_nat) 
 
     # All remaining lv segs with suspended succession if there is no known parcel area (probably roads or public lands)
     print("REVISE 'p_area = 0' logic when new data prep is ready") # replace with road tabulations
@@ -1044,7 +1063,7 @@ def RUN(cf, test):
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub'])) ]
     df2 = psegs[psegs.lu.str.contains("Natural Succession", na=False)]
     adjacency_mp(psegs, 'Natural Succession', 'Remnant adj to nat sus', df1, df2, 'minimum', 0, batch_size)
-    etime(cf, psegs, "Remnant Adj to Natural Succession", st_all_remain) 
+    etime(cf, psegs,  "Remnant Adj to Natural Succession", st_all_remain) 
 
     # ag_gen
     psegs.loc[(psegs.lu.isna()) & (psegs.s_luz == 'AG_GEN') & (psegs.s_area > 10000) & (psegs.p_lc_5 > psegs.p_area*0.5) & (psegs.Class_name.isin(['Low Vegetation'])), 'logic'] = "ag_gen last chance"
@@ -1101,7 +1120,7 @@ def RUN(cf, test):
     ########################
 
     sec_per_ps =  round(time.time() - cf_st) / len(psegs)
-    etime(cf, psegs, f"{cf} Main landuse pre-write complete! - {time.asctime()}\n({round(sec_per_ps, 4)} sec per pseg)", cf_st)
+    etime(cf, psegs,  f"{cf} Main landuse pre-write complete! - {time.asctime()}\n({round(sec_per_ps, 4)} sec per pseg)", cf_st)
     b_log = open(batch_log_Path, "a")
     b_log.write(f"{cf} Main `landuse` complete {time.asctime()}")
     b_log.close()
@@ -1114,13 +1133,13 @@ def RUN(cf, test):
     print(f'--outPath: {outPath}\n--outLayer: {outLayer}')
     wt = time.time()
     psegs.to_file(outPath, layer=outLayer, driver='GPKG')
-    etime(cf, psegs, f"Output write", wt)
+    etime(cf, psegs,  f"Output write", wt)
        
     return psegs
 
     # except Exception as e:
     #     print(f"{cf} FAILED")
-    #     etime(cf, psegs, f"main exception \n{e}", cf_st)
+    #     etime(cf, psegs,  f"main exception \n{e}", cf_st)
     #     sec_per_ps =  round(time.time() - cf_st) / len(psegs)
     #     print(f'{round(time.time() - cf_st) / len(psegs)} seconds per pseg')
     #     b_log = open(batch_log_Path, "a")

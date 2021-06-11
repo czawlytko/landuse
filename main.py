@@ -69,7 +69,7 @@ if __name__ == "__main__":
         print("--batch_size: ", batch_size)
 
         run_dp = False
-        run_lu = False
+        run_lu = True
         run_tc = True
         run_bi = True
         run_change = True
