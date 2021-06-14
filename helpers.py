@@ -85,7 +85,6 @@ def transfer_files(source, destination):
     print('Process ID (PID): ', run_process.pid)
     pid_list.append(run_process.pid)
 
-
 def make_ta_dict(cf, anci_folder, folder):
 
     files = os.listdir(f'{folder}/{cf}/input')
@@ -99,8 +98,7 @@ def make_ta_dict(cf, anci_folder, folder):
         print(f"Failed to open LC: {lc_path}" )
         exit()
     LUZ_values = luconfig.LUZ_values
-    # LUZ_values = ['AG_GEN', 'BAR', 'CAFO', 'CATT', 'CENT', 'CONS', 'CROP', 'DEC', 'EVE', 'EXT', 'FALL', 'NAT', 'OV', 'PAS', 'POUL', 'SUS', 'TG', 'TIM', 'WAT', 'WET', 'WET_NT', 'WET_T', 'no_luz']
-
+    
     lc_pid = {
         'name' : "landcover",
         'path': lc_path,
@@ -170,70 +168,102 @@ def make_ta_dict(cf, anci_folder, folder):
 
     return dict_dict
 
-def generate_ta_list(cf, folder):
+def joinData(psegs, remove_columns):
 
-    lc_pid = {
-        'path': f"{folder}/{cf}/temp/lc_pid_ta.dbf",
-        'zone': 'PID'
-    }
+    jd_st = time.time()
 
-    c1719_sid = {
-        'path': f"{folder}/{cf}/temp/c1719_sid_ta.dbf",
-        'zone': 'SID'
-    }
+    folder = luconfig.folder
+    LUZ_values = luconfig.LUZ_values
+    if remove_columns:
+        # subset to only required columns
+        psegs = psegs[['PSID', 'PID', 'SID', 'Class_name', 'geometry']]
 
-    c18_sid = {
-        'path': f"{folder}/{cf}/temp/c18_sid_ta.dbf",
-        'zone': 'SID'
-    }
+    dict_dict = generate_ta_list(cf, folder)
 
-    c18_pid = {
-        'path': f"{folder}/{cf}/temp/c18_pid_ta.dbf",
-        'zone': 'PID'
-    }
+    new_cols = []
 
-    n16_sid = {
-        'path': f"{folder}/{cf}/temp/n16_sid_ta.dbf",
-        'zone': 'SID'
-    }
-    
-    n16_pid = {
-    'path': f"{folder}/{cf}/temp/luz_pid_ta.dbf",
-    'zone': 'PID'
-    }
+    for dname, tadict in dict_dict.items():
+        merge_st = time.time()
+        tabPath = tadict['path']
+        zoneAbv = tadict['zone'][0].lower()
+        data_source = dname.split('_')[0]
+        zoneID = tadict['zone']
 
-    luz_sid = {
-        'path': f"{folder}/{cf}/temp/luz_sid_ta.dbf",
-        'zone': 'SID'
-    }
+        if os.path.isfile(tabPath):
+            tabledf = gpd.read_file(tabPath)
 
-    luz_pid = {
-        'path': f"{folder}/{cf}/temp/luz_pid_ta.dbf",
-        'zone': 'PID'
-    }
+            # rename Value to zone ID
+            tabledf = tabledf.rename(columns={'VALUE': zoneID})
 
-    p_area = {
-        'path': f"{folder}/{cf}/temp/parcelstable.dbf",
-        'zone': 'PID'
-    }
+            if 'geometry' in tabledf.columns:
+                tabledf = tabledf.drop(['geometry'], axis=1)
 
-    s_area = {
-        'path': f"{folder}/{cf}/temp/segtable.dbf",
-        'zone': 'SID'
-    }
+            # handle LUZ
+            if dname in ('luz_pid', 'luz_sid'):
+                print(dname, " - group 1 (LUZ only)")
 
-    # list of rasters and the zone units
-    dict_dict = {
-        'p_area': p_area,
-        's_area': s_area,
-        'luz_pid': luz_pid,
-        'luz_sid': luz_sid,
-        'lc_pid': lc_pid,
-        'c1719_sid': c1719_sid,
-        'c18_sid': c18_sid,
-        'c18_pid': c18_pid,
-        'n16_sid': n16_sid,
-        'n16_pid': n16_pid
-    }
+                # Esri has named the no-data column for LUZ as A__ or __A from arcpy.TabulateArea(), unclear why. Shoot me.
+                for none_col in ('A__', '__A'):
+                    if none_col in tabledf.columns:
+                        tabledf = tabledf.rename(columns={none_col: 'no_luz'})
 
-    return dict_dict
+                vcols = []  # to build list of included and accepted value columns
+                for col in tabledf.columns:
+                    if col in LUZ_values:
+                        vcols.append(col)
+
+                # Get max LUZ value
+                print(f"kept value columns: {vcols}")
+                new_col_name = f'{zoneID[0].lower()}_{dname.split("_")[0]}' # make p_luz or s_luz
+                tabledf[new_col_name] = tabledf[vcols].idxmax(axis=1)
+
+                print(tabledf.columns)
+                for drop_col in vcols:
+                    tabledf = tabledf.drop(drop_col, axis=1)
+
+                print(f'merging {dname} to psegs by {zoneID}')
+                psegs = psegs.merge(tabledf, on=zoneID, how='left')
+                etime(folder, cf, f"merged {dname}", merge_st)
+
+            if dname in ('s_area', 'p_area'):
+                print(dname, " - group 2 (areas)")
+
+                tabledf = tabledf.rename(columns={'Value': zoneID, 'Count': dname})
+
+                print(f'merging {dname} to psegs by {zoneID}')
+                print(f'columns: {tabledf.columns}')
+                psegs = psegs.merge(tabledf, on=zoneID, how='left')
+                etime(folder, cf, f"merged {dname}", merge_st)
+
+            if dname not in ('luz_pid', 'luz_sid', 's_area', 'p_area'):
+                print(dname, " - group 3 (everything else)")
+                tabledf = tabledf.rename(columns={'VALUE': zoneID})
+
+                for col in tabledf.columns:
+                    new_name = col.replace("VALUE_", f'{zoneAbv}_{data_source}_')
+                    tabledf = tabledf.rename(columns={col: new_name})
+
+                print(f'merging {dname} to psegs by {zoneID}')
+                psegs = psegs.merge(tabledf, on=zoneID, how='left')
+                etime(folder, cf, f"merged {dname}", merge_st)
+
+        else:
+            print(f"bad file path {tabPath}")
+            # pass
+            sys.exit()
+
+    print('final columns')
+    for fincol in psegs.columns:
+        if fincol not in ('Class_name','p_luz','s_luz','geometry'):
+            psegs[fincol] = psegs[fincol].fillna(0)
+            psegs[fincol] = psegs[fincol].astype('int32')
+        print(fincol, psegs[fincol].dtype)
+
+    etime(cf, psegs, "joinData()", jd_st)
+
+    return psegs
+
+
+
+
+

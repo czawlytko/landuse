@@ -452,7 +452,19 @@ def run_lu_change(cf, lu_type):
         output_path = os.path.join(lu_chg_path, 'output')
 
         # define paths
-        lc_change_ras_path = os.path.join(input_path, f"{cf}_landcoverchange_{oldyear}_{newyear}_June2021.tif")
+
+        files = os.listdir(f'{input_path}/{cf}/input')
+        pattern = f"{cf}_landcoverchange_????_????_*.tif"
+        for entry in files:
+            if fnmatch.fnmatch(entry, pattern):
+                print(f"Found landcover file: {entry}")
+                lc_change_ras_path = f'{folder}/{cf}/input/{entry}'
+                break
+        if not arcpy.Exists(lc_change_ras_path):
+            print(f"Failed to open LC: {lc_change_ras_path}" )
+            exit()
+
+        # lc_change_ras_path = os.path.join(input_path, f"{cf}_landcoverchange_{oldyear}_{newyear}_June2021.tif")
         lu_2017_ras_path = os.path.join(main_path, 'output', f"{cf}_lu_2017_2018.tif") #udpated
         psegs_gpkg_path = os.path.join(main_path, 'output', 'data.gpkg')
         trees_over_gpkg_path = os.path.join(main_path, 'output', 'trees_over.gpkg')

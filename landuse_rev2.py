@@ -18,6 +18,7 @@ import argparse
 
 import luconfig
 from helpers import etime
+from helpers import joinData
 
 
 def read_anci(anci_folder, ancipath, bounds):
@@ -96,7 +97,8 @@ def datacheck(cf, psegs, folder):
     pre = len(psegs)
     LC_classes = psegs.Class_name.unique()
     print(LC_classes)
-    psegs = psegs[(psegs.Class_name.isin(['Tree Canopy Over Roads', 'Low Vegetation', 'Tree Canopy Over Other Impervious Surfaces', 'Other Impervious Surfaces', 'Tree Canopy', 'Scrub\\Shrub', 'Roads', 'Buildings', 'Water', 'Tree Canopy Over Structures','Barren']))]
+    
+    
     # psegs = psegs[(psegs.Class_name != "")] # this removed psegs we watned to keep
     post = len(psegs)
     LC_classes = psegs.Class_name.unique()
@@ -110,15 +112,20 @@ def datacheck(cf, psegs, folder):
             print(f"adding {col} column as Str/None")
             psegs[col] = None
 
+    tcreclass_st = time.time()
+    print('Reclassing TC over classes')
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'lu'] = "Tree Canopy Over Roads"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'logic'] = "TC over"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'Class_name'] = "Roads"
 
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Other Impervious Surfaces"), 'lu'] = "Tree Canopy Over Other Impervious Surfaces"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Other Impervious Surfaces"), 'logic'] = "TC over"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Other Impervious Surfaces"), 'Class_name'] = "Other Impervious Surfaces"
 
-    if ('Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads', 'Tree Canopy Over Structures') in psegs.Class_name.unique():
-        print('Reclassing TC over classes')
-        tcreclass_st = time.time()
-        psegs['logic'] = psegs.loc[(psegs.Class_name.isin(['Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads','Tree Canopy Over Structures'])), 'logic'] = 'TC Over Landcover'
-        psegs['lu'] = psegs.loc[(psegs.Class_name.isin(['Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads','Tree Canopy Over Structures'])), 'lu'] = psegs.Class_name.replace("Tree Canopy Over ", "", regex=True)
-        psegs['Class_name'] = psegs.loc[(psegs.Class_name.isin(['Tree Canopy Over Other Impervious Surfaces','Tree Canopy Over Roads','Tree Canopy Over Structures'])), 'Class_name'] = psegs.Class_name.replace("Tree Canopy Over ", "", regex=True)
-        etime(cf, psegs,  "Reclassed TC Over classes", tcreclass_st)
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Structures"), 'lu'] = "Tree Canopy Over Structures"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Structures"), 'logic'] = "TC over"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Structures"), 'Class_name'] = "Buildings"  
+    etime(cf, psegs,  "Reclassed TC Over classes", tcreclass_st)
         
     if (len(psegs.PSID.unique()) != len(psegs) or 'PSID' not in psegs.columns):
         print("Generating unique PSIDs")
@@ -154,8 +161,7 @@ def datacheck(cf, psegs, folder):
             else:
                 print(f"Required column missing! - {col}")
 
-    
-        
+            
         if col not in non_int32_columns:
             psegs[col] = psegs[col].fillna(0)
             psegs = psegs.astype({col: 'int32'})
@@ -834,9 +840,7 @@ def RUN(cf, test):
     if test:
         print('--landuse.RUN() Test: ', test, type(test))
         # psegsPath = r"B:/landuse/testing_subsets/psegs_sub4.gpkg" # for checking nat succession
-        # psegsPath = r"B:/landuse/nat_testing/psegs_sub_edge.gpkg" # for checking edge NA data
         # inLayer = 'psegs'
-
         # make output name with iteration
         vnums = []
         for (root,dirs,files) in os.walk('Z:/landuse/testing_subsets/output', topdown=True):
@@ -883,6 +887,7 @@ def RUN(cf, test):
             with fiona.open(psegsPath, layer=layername) as src:
                 print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
 
+    psegs = joinData(psegs, True) # replace remove_columns bool with column check 
 
     psegs = datacheck(cf, psegs, folder)
 
@@ -1070,7 +1075,6 @@ def RUN(cf, test):
     psegs.loc[(psegs.lu.isna()) & (psegs.s_luz == 'AG_GEN') & (psegs.s_area > 10000) & (psegs.p_lc_5 > psegs.p_area*0.5) & (psegs.Class_name.isin(['Low Vegetation'])), 'lu'] = "Cropland Herbaceous"
 
 
-
     # rev2 6/4 -added
     maj_lc_vals = ['Low Vegetation']
     maj_lu_exclusions = ['Turf Herbaceous', 'Turf Low Vegetation']
@@ -1085,6 +1089,9 @@ def RUN(cf, test):
 
     ## Classification finished
 
+    psegs.loc[(psegs.lu == "Tree Canopy Over Roads"), 'Class_name'] = "Tree Canopy Over Roads"
+    psegs.loc[(psegs.lu == "Tree Canopy Over Other Impervious Surfaces"), 'Class_name'] = "Tree Canopy Over Other Impervious Surfaces"
+    psegs.loc[(psegs.lu == "Tree Canopy Over Structures"), 'Class_name'] = "Tree Canopy Over Structures"
 
     name_dict = luconfig.name_dict
     # clean up lu names to match final format

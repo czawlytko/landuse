@@ -70,116 +70,97 @@ def checkFile(fPath): # used for all anci data
     else:
         pass
 
-def joinData(psegs, clean_columns=True):
-
-    jd_st = time.time()
 
 
-    folder = luconfig.folder
-    LUZ_values = luconfig.LUZ_values
-    if clean_columns:
-        # subset to only required columns
-        psegs = psegs[['PSID', 'PID', 'SID', 'Class_name', 'geometry']]
+def TESTING(args):
+    name_dict = {
+        "Low Vegetation" : "Herbaceous",
+        "Developed Barren" : "Bare Developed",
+        r"Scrub\\Shrub" : "Scrub/Shrub",
+        "Other Impervious Surfaces" : "Other Impervious Surface",
+        "Timber Harvest" : "Harvested Forest",
+        "Shore Barren" : "Bare Shore",
+        "Pasture" : "Pasture/Hay",
+        "Orchard Vineyard" : "Orchard/Vineyard",
+        'Solar Other Impervious' : 'Solar Field Impervious',
+        'Solar Barren' : 'Solar Field Barren',
+        'Solar Herbaceous' : 'Solar Field Herbaceous',
+        'Solar Scrub/Shrub' : 'Solar Field Scrub/Shrub',
+        }
 
-    dict_dict = generate_ta_list(cf, folder)
+    import argparse
+    import geopandas as gpd
+    import pandas as pd
+    import shapely
+    import rasterio as rio
+    import rasterio.mask
+    import numpy as np
+    import fiona
 
-    new_cols = []
+    import time
+    import os
+    import sys
+    import traceback # track assertion errors in sjoin_mp
+    import multiprocessing as mp
+    import gc
+    from pathlib import Path
+    import argparse
 
-    for dname, tadict in dict_dict.items():
-        merge_st = time.time()
-        tabPath = tadict['path']
-        zoneAbv = tadict['zone'][0].lower()
-        data_source = dname.split('_')[0]
-        zoneID = tadict['zone']
-
-
-        if os.path.isfile(tabPath):
-            tabledf = gpd.read_file(tabPath)
-
-            # rename Value to zone ID
-            tabledf = tabledf.rename(columns={'VALUE': zoneID})
-
-            if 'geometry' in tabledf.columns:
-                tabledf = tabledf.drop(['geometry'], axis=1)
+    import luconfig
+    from helpers import etime
 
 
-            # handle LUZ
-            if dname in ('luz_pid', 'luz_sid'):
-                print(dname, " - group 1 (LUZ only)")
+    psegs = gpd.read_file(r"B:/landuse/version1/glou_51073/input/data.gpkg", layer='psegs_joined', driver='GPKG')
 
-                # Esri has named the no-data column for LUZ as A__ or __A from arcpy.TabulateArea(), unclear why. Shoot me.
-                for none_col in ('A__', '__A'):
-                    if none_col in tabledf.columns:
-                        tabledf = tabledf.rename(columns={none_col: 'no_luz'})
+    print(psegs.Class_name.unique())
 
-                vcols = []  # to build list of included and accepted value columns
-                for col in tabledf.columns:
-                    if col in LUZ_values:
-                        vcols.append(col)
+    ADD_cols = ['lu', 'logic', 's_luz', 'p_luz']
+    for col in ADD_cols:
+        if col not in psegs.columns:
+            print(f"adding {col} column as Str/None")
+            psegs[col] = None
 
-                # Get max LUZ value
-                print(f"kept value columns: {vcols}")
-                new_col_name = f'{zoneID[0].lower()}_{dname.split("_")[0]}' # make p_luz or s_luz
-                tabledf[new_col_name] = tabledf[vcols].idxmax(axis=1)
+    if "Tree Canopy Over Roads" in psegs.Class_name.unique():
+        print("TC over roads is there!")
 
-                print(tabledf.columns)
-                for drop_col in vcols:
-                    tabledf = tabledf.drop(drop_col, axis=1)
 
-                print(f'merging {dname} to psegs by {zoneID}')
-                psegs = psegs.merge(tabledf, on=zoneID, how='left')
-                etime(folder, cf, f"merged {dname}", merge_st)
 
-            if dname in ('s_area', 'p_area'):
-                print(dname, " - group 2 (areas)")
+    name_dict = luconfig.name_dict
+    # clean up lu names to match final format
+    for k, v in name_dict.items():
+        print(k, " to ", v)
+        psegs['lu'] = psegs['lu'].replace(k, v, regex=True)
 
-                tabledf = tabledf.rename(columns={'Value': zoneID, 'Count': dname})
+    print("\nOutput LU list: ", psegs.lu.unique(), "\n")
+    if len(psegs[(psegs.lu.isna())]) != 0:
+        print("No LU count: ", len(psegs[(psegs.lu.isna())]))
 
-                print(f'merging {dname} to psegs by {zoneID}')
-                print(f'columns: {tabledf.columns}')
-                psegs = psegs.merge(tabledf, on=zoneID, how='left')
-                etime(folder, cf, f"merged {dname}", merge_st)
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'lu'] = "Tree Canopy Over Roads"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'logic'] = "TC over"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'Class_name'] = "Roads"
 
-            if dname not in ('luz_pid', 'luz_sid', 's_area', 'p_area'):
-                print(dname, " - group 3 (everything else)")
-                tabledf = tabledf.rename(columns={'VALUE': zoneID})
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'lu'] = "Tree Canopy Over Other Impervious Surfaces"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'logic'] = "TC over"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'Class_name'] = "Other Impervious Surfaces"
 
-                for col in tabledf.columns:
-                    new_name = col.replace("VALUE_", f'{zoneAbv}_{data_source}_')
-                    tabledf = tabledf.rename(columns={col: new_name})
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'lu'] = "Tree Canopy Over Structures"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'logic'] = "TC over"
+    psegs.loc[(psegs.Class_name == "Tree Canopy Over Roads"), 'Class_name'] = "Buildings"
 
-                print(f'merging {dname} to psegs by {zoneID}')
-                psegs = psegs.merge(tabledf, on=zoneID, how='left')
-                etime(folder, cf, f"merged {dname}", merge_st)
 
+    # POPULATE lucode 
+    psegs['lucode'] = 0
+    # populate lucode field if value in dictionary
+    for lu in psegs.lu.unique():
+        if lu in luconfig.lu_code_dict.keys():
+            for k, v in luconfig.lu_code_dict.items():
+                if k == lu:
+                    psegs.loc[(psegs.lu == k), 'lucode'] = v
         else:
-            print(f"bad file path {tabPath}")
-            # pass
-            sys.exit()
+            print("\n", lu, " not in keys")
 
-    print('final columns')
-    for fincol in psegs.columns:
-        if fincol not in ('Class_name','p_luz','s_luz','geometry'):
-            psegs[fincol] = psegs[fincol].fillna(0)
-            psegs[fincol] = psegs[fincol].astype('int32')
-        print(fincol, psegs[fincol].dtype)
+    print(psegs.lucode.unique())
 
-    etime(cf, psegs, "joinData()", jd_st)
+    time.sleep(30)
 
-    return psegs
-
-
-name_dict = {
-    "Low Vegetation" : "Herbaceous",
-    "Developed Barren" : "Bare Developed",
-    r"Scrub\\Shrub" : "Scrub/Shrub",
-    "Other Impervious Surfaces" : "Other Impervious Surface",
-    "Timber Harvest" : "Harvested Forest",
-    "Shore Barren" : "Bare Shore",
-    "Pasture" : "Pasture/Hay",
-    "Orchard Vineyard" : "Orchard/Vineyard",
-    'Solar Other Impervious' : 'Solar Field Impervious',
-    'Solar Barren' : 'Solar Field Barren',
-    'Solar Herbaceous' : 'Solar Field Herbaceous',
-    'Solar Scrub/Shrub' : 'Solar Field Scrub/Shrub',
-    }
+    psegs.to_file(r"B:/landuse/version1/glou_51073/output/data2.gpkg", layer='psegs_lu', driver='GPKG')

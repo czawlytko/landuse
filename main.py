@@ -22,7 +22,7 @@ import helpers
 import landuse_rev2 as landuse
 import tc.TC_LU_Submodule_v1 as trees_over
 import burn_in
-# import lu_change.lu_change_vector_v1_callable.py as lu_change_module
+import lu_change.lu_change_vector_v1_callable as lu_change_module
 
 def intro(cflist):
     folder = luconfig.folder
@@ -69,8 +69,8 @@ if __name__ == "__main__":
         print("--batch_size: ", batch_size)
 
         run_dp = False
-        run_lu = True
-        run_tc = True
+        run_lu = False
+        run_tc = False
         run_bi = True
         run_change = True
 
@@ -81,12 +81,10 @@ if __name__ == "__main__":
             helpers.county_check(cf) # check ancillary data and fips and...
             psegs = landuse.RUN(cf, test)
         else:
-            print('did not run lu')
+            print('Did not run lu')
 
         if run_tc:
-            print("do tc")
             tc_flag = trees_over.run_trees_over_submodule(luconfig.TC_CPUS, cf)
-
             if tc_flag == 0:
                 print("Trees over Submodule complete")
             elif tc_flag == -1:
@@ -95,12 +93,10 @@ if __name__ == "__main__":
                 print("Trees over Submodule flag invalid value: ", tc_flag)
                 print("Check for trees_over.gpkg manually")
         else:
-            print("did not run_tc")
+            print("Did not run_tc")
 
         if run_bi:
-
             burnin_flag = burn_in.run_burnin_submodule(luconfig.folder, luconfig.anci_folder, cf)
-
             if burnin_flag == 0:
                 print("Burn in Submodule complete")
             elif burnin_flag == -1:
@@ -114,7 +110,7 @@ if __name__ == "__main__":
         if run_change:
             lu_type = 'v1' # extension added to file names to distinguish versions of data
 
-            # lu_chg_flag = lu_change_module.run_lu_change(cf, lu_type)
+            lu_chg_flag = lu_change_module.run_lu_change(cf, lu_type)
 
             if lu_chg_flag == 0:
                 print("LU Change Module complete")

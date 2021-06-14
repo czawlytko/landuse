@@ -94,11 +94,3 @@ def defineReclassValues(df):
 
     #return updated data
     return df
-
-if __name__ == "__main__":
-
-    xmlPath = r"/media/imagery/usgs_sc/smcdonald/Data/tmp/bath_51017_landcoverchange_2014_2018_draft.tif.xml"
-    df = buildChangeData(xmlPath)
-    df.to_csv(r"/media/imagery/usgs_sc/smcdonald/Data/tmp/lc_change.csv", index=False)
-    df = defineReclassValues(df)
-    # df.to_csv(r"/media/imagery/usgs_sc/smcdonald/Data/tmp/lc_crosswalk.csv", index=False)

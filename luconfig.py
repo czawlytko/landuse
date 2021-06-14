@@ -39,38 +39,29 @@ lu_code_dict = {
     'Water':1000,
     'Estuary (tidal)' : 1110,
     'Lakes & Ponds' : 1120,
-    # 'Lake or Pond' : 1120, # rev1
     'Open Channel' : 1211,
-    'TC over Channel' : 1212,
+    'Tree Canopy over Channel' : 1212,
     'Culverted/Buried Channel' : 1213,
     'Open Ditch' : 1221,
-    'TC over Ditch' : 1222,
+    'Tree Canopy over Ditch' : 1222,
     'Culverted/Buried Ditch' : 1223,
-    # 'Impervious Roads' : 2110, 
-    'Roads' : 2110, #rev1
-    # 'Structures' : 2120,
-    'Buildings' : 2120, # rev1
+    'Roads' : 2110,
+    'Building' : 2120,
     'Other Impervious' : 2130,
-    'TC over Roads' : 2141,
-    'TC over Structures' : 2142,
-    'TC over Other Impervious' : 2143,
-    # 'Turf Grass' : 2210,
-    # 'Turf Herbaceous Low Vegetation' : 2210, #rev1
-    'Turf Herbaceous' : 2210, #rev1
+    'Tree Canopy over Roads' : 2141,
+    'Tree Canopy over Building' : 2142,
+    'Tree Canopy over Other Impervious' : 2143,
+    'Turf Herbaceous' : 2210,
     'Bare Developed' : 2220,
-    # 'Developed Barren' : 2220, #rev1
     'Suspended Succession Barren':2231,
-    # 'Suspended Succession Barren' : 2231, # rev1
     'Suspended Succession Herbaceous':2232,
-    # 'Suspended Succession Herbaceous' : 2232, # rev1
-    'Suspended Succession Scrub/Shrub':2233, # rev2
-    'TC over Turf Grass' : 2240,
+    'Suspended Succession Scrub/Shrub':2233,
+    'Tree Canopy over Turf Grass' : 2240,
     'Forest' : 3000,
     'Forest Forest' : 3100,
-    'TC in Agriculture' : 3200,
+    'Tree Canopy in Agriculture' : 3200,
     'Harvested Forest Barren' : 3310,
     'Harvested Forest Herbaceous' : 3320,
-    # 'Harvested Forest Scrub/Shrub' : 3330, # converted to "Natural Succession Scrub/Shrub"
     'Natural Succession Barren' : 3410,
     'Natural Succession Herbaceous' : 3420,
     'Natural Succession Scrub/Shrub' :3430,
@@ -79,33 +70,29 @@ lu_code_dict = {
     'Pasture/Hay Barren (Former Fallow)' : 4121,
     'Pasture/Hay Herbaceous (Former Fallow)' : 4122,
     'Pasture/Hay Scrub/Shrub' : 4123,
-
     'Orchard/Vineyard Barren' : 4131,
     'Orchard/Vineyard Herbaceous' : 4132,
     'Orchard/Vineyard Scrub/Shrub' : 4133,
     'Pasture/Hay Barren' : 4141,
     'Pasture/Hay Herbaceous' : 4142,
-    # 'Pasture Low Vegetation' : 4142,  # rev1
-    # 'Pasture Scrub\Shrub' : 4143, #rev1 - CLASS DID NOT EXIST BEFORE
-    'Idle/Fallow Scrub/Shrub' : 4143, # Class does not exist in v1
-    'Solar Fields Impervious' : 4210,
-    'Solar Fields Pervious Barren' : 4221,
-    'Solar Fields Pervious Herbaceous' : 4222,
-    # 'Solar Low Vegetation' : 4222, #rev1
-    'Solar Fields Pervious Scrub/Shrub' : 4223,
+    'Idle/Fallow Scrub/Shrub' : 4143, 
+    'Solar Field Impervious' : 4210,
+    'Solar Field Barren' : 4221,
+    'Solar Field Herbaceous' : 4222,
+    'Solar Field Pervious Scrub/Shrub' : 4223,
     'Extractive Barren' : 4310,
     'Extractive Other Impervious' : 4320,
     'Wetland':5000,
-    'Tidal Wetlands Barren' : 5101, # rev2
-    'Tidal Wetlands Herbaceous' : 5102, # rev2
-    'Tidal Wetlands Scrub/Shrub' : 5103, # rev2
-    'Tidal Wetlands Tree Canopy' : 5104, # rev2
-    'Tidal Wetlands Forest' : 5105, # rev2
-    'Riverine (Non-Tidal) Wetlands- Barren':5201,
-    'Riverine (Non-Tidal) Wetlands- Herbaceous':5202,
-    'Riverine (Non-Tidal) Wetlands- Scrub/Shrub':5203,
-    'Riverine (Non-Tidal) Wetlands- Tree Canopy':5204,
-    'Riverine (Non-Tidal) Wetlands- Forest':5205,
+    'Tidal Wetland Barren' : 5101, # rev2
+    'Tidal Wetland Herbaceous' : 5102, # rev2
+    'Tidal Wetland Scrub/Shrub' : 5103, # rev2
+    'Tidal Wetland Tree Canopy' : 5104, # rev2
+    'Tidal Wetland Forest' : 5105, # rev2
+    'Riverine (Non-Tidal) Wetland Barren':5201,
+    'Riverine (Non-Tidal) Wetland Herbaceous':5202,
+    'Riverine (Non-Tidal) Wetland Scrub/Shrub':5203,
+    'Riverine (Non-Tidal) Wetland Tree Canopy':5204,
+    'Riverine (Non-Tidal) Wetland Forest':5205,
     'Headwater Barren' : 5211,
     'Headwater Herbaceous' : 5212,
     'Headwater Scrub/Shrub' : 5213,
@@ -128,15 +115,19 @@ lu_code_dict = {
 
 name_dict = {
     "Low Vegetation" : "Herbaceous",
+    "Structures" : "Buildings",
     "Developed Barren" : "Bare Developed",
     r"Scrub\\Shrub" : "Scrub/Shrub",
     "Other Impervious Surfaces" : "Other Impervious Surface",
     "Timber Harvest" : "Harvested Forest",
+    "Harvested Forest Scrub/Shrub" :"Natural Succession Scrub/Shrub",
+    r"Harvested Forest Scrub\\Shrub" : "Natural Succession Scrub/Shrub",
     "Shore Barren" : "Bare Shore",
-    "Pasture" : "Pasture/Hay",
+    # "Pasture" : "Pasture/Hay",
     "Orchard Vineyard" : "Orchard/Vineyard",
     'Solar Other Impervious' : 'Solar Field Impervious',
     'Solar Barren' : 'Solar Field Barren',
+    'Solar Pervious Herbaceous' : 'Solar Field Herbaceous',
     'Solar Herbaceous' : 'Solar Field Herbaceous',
     'Solar Scrub/Shrub' : 'Solar Field Scrub/Shrub',
     }
