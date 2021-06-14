@@ -54,19 +54,19 @@ from lu_change import lu_change_helpers_v1 as lch
 from lu_change import readXML as xml 
 from lu_change import LU_Change_P6Rollup as p6_change
 
-import luconfig
+from helpers import etime 
 
-def etime(folder, cf, note, starttime):
-    # print text and elapsed time in HMS or Seconds if time < 60 sec
-    elapsed =  time.time()-starttime
-    f = open(f"{folder}/{cf}/luchange_log.txt", "a")
-    if elapsed > 60:
-        f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
-        print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
-    else:
-        f.write(f'{cf}--{note} runtime - {round(elapsed,2)} sec\n\n')
-        print(f'{cf}--{note} runtime - {round(elapsed,2)} sec')
-    f.close()
+# def etime(folder, cf, note, starttime):
+#     # print text and elapsed time in HMS or Seconds if time < 60 sec
+#     elapsed =  time.time()-starttime
+#     f = open(f"{folder}/{cf}/luchange_log.txt", "a")
+#     if elapsed > 60:
+#         f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
+#         print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
+#     else:
+#         f.write(f'{cf}--{note} runtime - {round(elapsed,2)} sec\n\n')
+#         print(f'{cf}--{note} runtime - {round(elapsed,2)} sec')
+#     f.close()
 
 def runDirect(lc_change_gdf):
     """
@@ -112,7 +112,7 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
     # vals to use for lvb to ... classes
     crop_val = lch.get_lu_code('Cropland Herbaceous', False)
     pas_val = lch.get_lu_code('Pasture/Hay Herbaceous', False)
-    sussuc_val = lch.get_lu_code('Suspended Sucession Herbaceous', False)
+    sussuc_val = lch.get_lu_code('Suspended Succession Herbaceous', False)
     
     # Get all new struct classes  
     new_struct_classes = ['Barren to Structures', 
@@ -160,7 +160,7 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
     #order lc_change_gdf and lvb_gdf columns the same
     lvb_gdf = lvb_gdf[['zone', 'PID', 'TYPE', 'geometry']]
     lvb_gdf.loc[:, 'Method'] = 'New Structure - Parcel'
-    lvb_gdf.loc[:, 'T2_LU_Val'] = lch.get_lu_code('Turf Grass', False)
+    lvb_gdf.loc[:, 'T2_LU_Val'] = lch.get_lu_code('Turf Herbaceous', False)
     lvb_gdf.loc[:, 'T1_LU_Code'] = 0
     #add new vectors to table and give it T1_LU_Code
     lc_change_gdf = lc_change_gdf.append(lvb_gdf)
@@ -245,7 +245,7 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
     tct_gdf.loc[:, 'LC_Change'] = 'Tree Canopy to Tree Canopy NS'
     st_zone = np.amax(lc_change_gdf['zone'])
     tct_gdf.loc[:, 'zone'] = [int(x) for x in range(st_zone, st_zone+len(tct_gdf))]
-    tct_gdf.loc[:, 'T2_LU_Val'] = lch.get_lu_code('TC over Turf Grass', False)
+    tct_gdf.loc[:, 'T2_LU_Val'] = lch.get_lu_code('Tree Canopy over Turf', False)
     tct_gdf.loc[:, 'T1_LU_Code'] = 0
     tct_gdf.loc[:, 'Method'] = 'Indirect Rules'
     cols = ['zone', 'LC_Change', 'T2_LU_Val', 'T1_LU_Code', 'Method', 'geometry']
@@ -395,7 +395,7 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
 def run_lu_change(cf, lu_type):
     st_time = time.time()
     print('############################')
-    print('####### {} #########'.format(cf))
+    print(f'####### {cf} - lu change #########')
     print('############################')
     #2013-2017: NY, PA, DC
     #2013-2018: DE, MD, VA2
@@ -469,7 +469,7 @@ def run_lu_change(cf, lu_type):
         psegs_gpkg_path = os.path.join(main_path, 'output', 'data.gpkg')
         trees_over_gpkg_path = os.path.join(main_path, 'output', 'trees_over.gpkg')
         parcels_path = os.path.join(main_path, 'temp', 'temp_dataprep.gdb') 
-        raster_parcels_path = os.path.join(main_path, 'temp', 'parcels.tif')
+        raster_parcels_path = os.path.join(main_path, 'temp', 'parcels.tif') # is this what this will be called?
         nlcd11_path = os.path.join(anci_folder, 'NLCD', 'nlcd_2011_10m.tif')
         lcmap_11_19_path = os.path.join(anci_folder, 'lcmap', '10m_PreDev','Primary_2y_2011_2019_projected.tif')
         cdl13_path = os.path.join(anci_folder, 'CDL', '2013_10m_cdls_arc.tif')
@@ -644,9 +644,12 @@ def run_lu_change(cf, lu_type):
         lc_change_gdf = lc_change_gdf[['zone', 'T1_LU_Code', 'T1_LU', 'T2 LU', 'LC_Change', 'Method', 'TYPE', 'Type_log', 'GRP_TYPE', 'LC_Chg_Val', 'PID', 'Acres', 'geometry']]
         lc_change_gdf.to_file(os.path.join(output_path, f"{cf}_LU_change_{lu_type}.shp"))
 
-        if 0 in list(lc_change_gdf['T1_LU_Code']):
-            print(lc_change_gdf[lc_change_gdf['T1_LU_Code'] == 0])
-            lc_change_gdf[lc_change_gdf['T1_LU_Code'] == 0].to_csv(os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"), index=False)
+        if 0 in list(lc_change_gdf['T1_LU_Code']) or -1 in list(lc_change_gdf['T1_LU_Code']):
+            print("\n***********************************************************************************")
+            print("Missing T1 LU for ", len(lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])]), " segments")
+            print("Check ", os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"))
+            print("***********************************************************************************\n")
+            lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])].to_csv(os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"), index=False)
 
         etime(folder, cf, 'Write vector LU change', st)
         st = time.time()

@@ -141,7 +141,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         st = time.time()
 
     # rasterize LU
-    rasterizeLU(lc_path, lu_path, lu_ras_path, 'lucode')
+    rasterizeLU(lc_path, lu_path, lu_ras_path, 'lu_code')
     etime(proj_folder, cf, "Land use rasterized", st)
     st = time.time()
 

@@ -1,86 +1,73 @@
-P6_LU,Mid_RollUp,LU
-Cropland,Cropland,Agricultural General- Barren
-Cropland,Cropland,Agricultural General- Herbaceous
-Cropland,Cropland,Agricultural General- Scrub-Shrub
-Cropland,Cropland,Cropland Barren
-Cropland,Cropland,Cropland Herbaceous
-Cropland,Cropland,Crop Scrub\Shrub
-Cropland,Orchard/Vineyard,Orchard/Vineyard Barren
-Cropland,Orchard/Vineyard,Orchard/Vineyard Herbaceous
-Cropland,Orchard/Vineyard,Orchard/Vineyard Scrub-Shrub
-Forest,Forest,Forest
-Forest,Forest,Forest Forest
-Forest,TC in Agriculture,TC in Agriculture
-Forest,Forest,Tree Canopy
-Forest,Forest,Tree Canopy LC
-Impervious Non-Roads,Other Impervious,Impervious Surfaces LC
-Impervious Non-Roads,Other Impervious,Other Impervious
-Impervious Non-Roads,Solar Fields Impervious,Solar Fields Impervious
-Impervious Non-Roads,Structures,Structures LC
-Impervious Non-Roads,Structures,Structures
-Impervious Roads,Impervious Roads,Impervious Roads LC
-Impervious Roads,Impervious Roads,Impervious Roads
-Mixed Open,Bare Developed,Bare Developed
-Mixed Open,Bare Shore,Bare Shore
-Mixed Open,Extractive,Extractive Barren
-Mixed Open,Extractive,Extractive Other Impervious
-Mixed Open,Harvested Forest,Harvested Forest Barren
-Mixed Open,Harvested Forest,Harvested Forest Herbaceous
-Mixed Open,Natural Succession,Low Vegetation LC
-Mixed Open,Natural Succession,Herbaceous
-Mixed Open,Natural Succession,Barren LC
-Mixed Open,Natural Succession,Natural Succession Barren
-Mixed Open,Natural Succession,Natural Succession Herbaceous
-Mixed Open,Natural Succession,Natural Succession Scrub-Shrub
-Mixed Open,Natural Succession,Shrubland LC
-Mixed Open,Natural Succession,Scrub-Shrub
-Mixed Open,Solar Fields Pervious,Solar Fields Pervious Barren
-Mixed Open,Solar Fields Pervious,Solar Fields Pervious Herbaceous
-Mixed Open,Solar Fields Pervious,Solar Fields Pervious Scrub-Shrub
-Mixed Open,Suspended Succession,Suspended Succession Barren
-Mixed Open,Suspended Succession,Suspended Succession Herbaceous
-Mixed Open,Suspended Succession,Suspended Succession Scrub-Shrub
-Pasture,Pasture,Idle/Fallow Scrub-Shrub
-Pasture,Pasture,Pasture/Hay Barren
-Pasture,Pasture,Pasture/Hay Barren (Former Fallow)
-Pasture,Pasture,Pasture/Hay Herbaceous
-Pasture,Pasture,Pasture/Hay Herbaceous (Former Fallow)
-Pasture,Pasture,Pasture/Hay Scrub-Shrub
-Tree Canopy Over Impervious,TC over Other Impervious,TC over Other Impervious
-Tree Canopy Over Impervious,TC over Roads,TC over Roads
-Tree Canopy Over Impervious,TC over Structures,TC over Structures
-Tree Canopy over Turf Grass,TC over Turf Grass,TC over Turf Grass
-Turf Grass,Turf Grass,Turf Grass
-Water,Water,Culverted/Buried Channel
-Water,Water,Estuary (tidal)
-Water,Water,Lakes & Ponds
-Water,Water,Open Channel
-Water,Water,TC over Channel
-Water,Water,Water LC
-Water,Water,Water
-"Wetlands, Floodplain","Wetlands, Floodplain",Floodplain Barren
-"Wetlands, Floodplain","Wetlands, Floodplain",Floodplain Herbaceous
-"Wetlands, Floodplain","Wetlands, Floodplain",Floodplain Scrub-Shrub
-"Wetlands, Floodplain","Wetlands, Floodplain",Floodplain Tree Canopy
-"Wetlands, Floodplain","Wetlands, Floodplain",Headwater Barren
-"Wetlands, Floodplain","Wetlands, Floodplain",Headwater Forest
-"Wetlands, Floodplain","Wetlands, Floodplain",Headwater Herbaceous
-"Wetlands, Floodplain","Wetlands, Floodplain",Headwater Scrub-Shrub
-"Wetlands, Floodplain","Wetlands, Floodplain",Headwater Tree Canopy
-"Wetlands, Floodplain","Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands- Barren
-"Wetlands, Floodplain","Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands- Forest
-"Wetlands, Floodplain","Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands- Herbaceous
-"Wetlands, Floodplain","Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands- Scrub-Shrub
-"Wetlands, Floodplain","Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands- Tree Canopy
-"Wetlands, Other","Wetlands, Floodplain",Emergent Wetlands LC
-"Wetlands, Other","Wetlands, Floodplain",Emergent Wetlands
-"Wetlands, Other","Wetlands, Other",Terrene/Isolated Wetlands Barren
-"Wetlands, Other","Wetlands, Other",Terrene/Isolated Wetlands Forest
-"Wetlands, Other","Wetlands, Other",Terrene/Isolated Wetlands Herbaceous
-"Wetlands, Other","Wetlands, Other",Terrene/Isolated Wetlands Scrub-Shrub
-"Wetlands, Other","Wetlands, Other",Terrene/Isolated Wetlands Tree Canopy
-"Wetlands, Tidal","Wetlands, Tidal",Tidal Barren
-"Wetlands, Tidal","Wetlands, Tidal",Tidal Forest
-"Wetlands, Tidal","Wetlands, Tidal",Tidal Herbaceous
-"Wetlands, Tidal","Wetlands, Tidal",Tidal Scrub-Shrub
-"Wetlands, Tidal","Wetlands, Tidal",Tidal Tree Canopy
+P6_LU,LU
+Cropland,Cropland Barren
+Cropland,Cropland Herbaceous
+Cropland,Orchard/Vineyard Barren
+Cropland,Orchard/Vineyard Herbaceous
+Cropland,Orchard/Vineyard Scrub/Shrub
+Forest,Forest
+Forest,Forest Forest
+Forest,Tree Canopy in Agriculture
+Forest,Tree Canopy
+Impervious Non-Roads,Other Impervious
+Impervious Non-Roads,Solar Fields Impervious
+Impervious Non-Roads,Buildings
+Impervious Roads,Roads
+Mixed Open,Bare Developed
+Mixed Open,Bare Shore
+Mixed Open,Extractive Barren
+Mixed Open,Extractive Other Impervious
+Mixed Open,Harvested Forest Barren
+Mixed Open,Harvested Forest Herbaceous
+Mixed Open,Natural Succession Barren
+Mixed Open,Natural Succession Herbaceous
+Mixed Open,Natural Succession Scrub/Shrub
+Mixed Open,Solar Fields Barren
+Mixed Open,Solar Fields Herbaceous
+Mixed Open,Solar Fields Scrub/Shrub
+Mixed Open,Suspended Succession Barren
+Mixed Open,Suspended Succession Herbaceous
+Mixed Open,Suspended Succession Scrub/Shrub
+Pasture,Idle/Fallow Scrub/Shrub
+Pasture,Pasture/Hay Barren
+Pasture,Pasture/Hay Barren (Former Fallow)
+Pasture,Pasture/Hay Herbaceous
+Pasture,Pasture/Hay Herbaceous (Former Fallow)
+Pasture,Pasture/Hay Scrub/Shrub
+Tree Canopy Over Impervious,Tree Canopy over Other Impervious
+Tree Canopy Over Impervious,Tree Canopy over Roads
+Tree Canopy Over Impervious,Tree Canopy over Structures
+Tree Canopy over Turf Grass,Tree Canopy over Turf
+Turf Grass,Turf Herbaceous
+Water,Culverted/Buried Channel
+Water,Estuary (tidal)
+Water,Lake/Pond
+Water,Open Channel
+Water,Tree Canopy over Channel
+Water,Water
+"Wetlands, Floodplain",Floodplain Barren
+"Wetlands, Floodplain",Floodplain Herbaceous
+"Wetlands, Floodplain",Floodplain Scrub/Shrub
+"Wetlands, Floodplain",Floodplain Forest
+"Wetlands, Floodplain",Floodplain Tree Canopy
+"Wetlands, Floodplain",Headwater Barren
+"Wetlands, Floodplain",Headwater Forest
+"Wetlands, Floodplain",Headwater Herbaceous
+"Wetlands, Floodplain",Headwater Scrub/Shrub
+"Wetlands, Floodplain",Headwater Tree Canopy
+"Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands Barren
+"Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands Forest
+"Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands Herbaceous
+"Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands Scrub/Shrub
+"Wetlands, Floodplain",Riverine (Non-Tidal) Wetlands Tree Canopy
+"Wetlands, Other",Wetland
+"Wetlands, Other",Emergent Wetlands
+"Wetlands, Other",Terrene/Isolated Wetlands Barren
+"Wetlands, Other",Terrene/Isolated Wetlands Forest
+"Wetlands, Other",Terrene/Isolated Wetlands Herbaceous
+"Wetlands, Other",Terrene/Isolated Wetlands Scrub/Shrub
+"Wetlands, Other",Terrene/Isolated Wetlands Tree Canopy
+"Wetlands, Tidal",Tidal Wetlands Barren
+"Wetlands, Tidal",Tidal Wetlands Forest
+"Wetlands, Tidal",Tidal Wetlands Herbaceous
+"Wetlands, Tidal",Tidal Wetlands Scrub/Shrub
+"Wetlands, Tidal",Tidal Wetlands Tree Canopy

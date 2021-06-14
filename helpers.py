@@ -5,6 +5,8 @@ import argparse
 import multiprocessing as mp
 import subprocess
 import sys
+import fnmatch
+import geopandas as gpd
 
 import luconfig
 
@@ -14,14 +16,10 @@ def etime(cf, psegs, note, starttime):
     # print text and elapsed time in HMS or Seconds if time < 60 sec
     elapsed = time.time()-starttime
     log_dir = Path(f"{folder}/{cf}") # define as pathlib path object, allows pathlib's exists()
-
-    if log_dir.exists() == False:
-        Path.mkdir(log_dir)
-        print(f'making dir... {log_dir}')
     etime_file = Path(log_dir, "etlog.txt")
 
-    if 'lu' in psegs.columns:  # etime() is used before lu exists
-        print(f"----{round((len(psegs[(psegs.lu.notna())]))/len(psegs)*100, 2)}% lu classified")
+    # if 'lu' in psegs.columns:  # etime() is used before lu exists
+    #     print(f"----{round((len(psegs[(psegs.lu.notna())]))/len(psegs)*100, 2)}% lu classified")
 
     f = open(etime_file, "a")
     if elapsed > 60:
@@ -49,7 +47,7 @@ def county_check(cf,):
     
     for k,v in luconfig.anci_dict.items():
         checkFile(Path(luconfig.anci_folder, v))
-    print('Ancillary data check: COMPLETE')
+    print('--Ancillary data check: COMPLETE')
 
     if cf[5:7] in luconfig.st_dict:
         stabv = luconfig.st_dict[cf[5:7]]
@@ -69,7 +67,6 @@ def files_exist(file_list):
             exit()
     return file_exist_flag
 
-
 def transfer_files(source, destination):
     global pid_list
     # check if files exist:
@@ -85,102 +82,92 @@ def transfer_files(source, destination):
     print('Process ID (PID): ', run_process.pid)
     pid_list.append(run_process.pid)
 
-def make_ta_dict(cf, anci_folder, folder):
-
-    files = os.listdir(f'{folder}/{cf}/input')
-    pattern = f"{cf}_landcover_????_*.tif"
-    for entry in files:
-        if fnmatch.fnmatch(entry, pattern):
-            print(f"Found landcover file: {entry}")
-            lc_path = f'{folder}/{cf}/input/{entry}'
-            break
-    if not arcpy.Exists(lc_path):
-        print(f"Failed to open LC: {lc_path}" )
-        exit()
-    LUZ_values = luconfig.LUZ_values
-    
-    lc_pid = {
-        'name' : "landcover",
-        'path': lc_path,
-        'zone': 'PID',
-        'vals' : [1,2,3,4,5,6,7,8,9,10,11,12]
-        }
-
-    c1719_sid = {
-        'name' : "CDL 2017-2019",
-        'path': f'{anci_folder}/CDL/CDL_2017_2019_4class_maj_1m.tif',
-        'zone': 'SID',
-        'vals' : [0,1,2,3,4]
-        }
-
-    c18_sid = {
-        'name' : "CDL 2018",
-        'path': f'{anci_folder}/CDL/cdl_2018_4class_maj_1m.tif',
-        'zone': 'SID',
-        'vals' : [0,1,2,3,4]
-        }
-
-    c18_pid = {
-        'name' : "CDL 2018",
-        'path': f'{anci_folder}/CDL/cdl_2018_4class_maj_1m.tif',
-        'zone': 'PID',
-        'vals' : [0,1,2,3,4]
-        }
-
-    n16_sid = {
-        'name' : "NLCD",
-        'path': f'{anci_folder}/NLCD/NLCD_2016_pashay_maj_1m.tif',
-        'zone': 'SID',
-        'vals' : [0,1]
-        }
-
-    n16_pid = {
-        'name' : "NLCD",
-        'path': f'{anci_folder}/NLCD/NLCD_2016_pashay_maj_1m.tif',
-        'zone': 'PID',
-        'vals' : [0,1]
-        }
-
-    luz_sid = {
-        'name' : "Local Use or Zoning",
-        'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
-        'zone': 'SID',
-        'vals' : LUZ_values
-        }
-
-    luz_pid = {
-        'name' : "Local Use or Zoning",
-        'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
-        'zone': 'PID',
-        'vals' : LUZ_values
-        }
-
-    # list of rasters and the zone units
-    dict_dict = {'lc_pid': lc_pid,
-                'c1719_sid': c1719_sid,
-                'c18_sid': c18_sid,
-                'c18_pid': c18_pid,
-                'n16_sid': n16_sid,
-                'n16_sid': n16_pid,
-                'luz_sid': luz_sid,
-                'luz_pid': luz_pid
-                }
-
-    return dict_dict
-
-def joinData(psegs, remove_columns):
+def joinData(cf, psegs, remove_columns):
 
     jd_st = time.time()
 
     folder = luconfig.folder
     LUZ_values = luconfig.LUZ_values
     if remove_columns:
+        print('removing columns')
         # subset to only required columns
         psegs = psegs[['PSID', 'PID', 'SID', 'Class_name', 'geometry']]
 
-    dict_dict = generate_ta_list(cf, folder)
+    lc_pid = {
+        'path': f"{folder}/{cf}/temp/lc_pid_ta.dbf",
+        'zone': 'PID'
+    }
+
+    c1719_sid = {
+        'path': f"{folder}/{cf}/temp/c1719_sid_ta.dbf",
+        'zone': 'SID'
+    }
+
+    c18_sid = {
+        'path': f"{folder}/{cf}/temp/c18_sid_ta.dbf",
+        'zone': 'SID'
+    }
+
+    c18_pid = {
+        'path': f"{folder}/{cf}/temp/c18_pid_ta.dbf",
+        'zone': 'PID'
+    }
+
+    n16_sid = {
+        'path': f"{folder}/{cf}/temp/n16_sid_ta.dbf",
+        'zone': 'SID'
+    }
+    
+    n16_pid = {
+    'path': f"{folder}/{cf}/temp/n16_pid_ta.dbf",
+    'zone': 'PID'
+    }
+
+    luz_sid = {
+        'path': f"{folder}/{cf}/temp/luz_sid_ta.dbf",
+        'zone': 'SID'
+    }
+
+    luz_pid = {
+        'path': f"{folder}/{cf}/temp/luz_pid_ta.dbf",
+        'zone': 'PID'
+    }
+
+    p_area = {
+        'path': f"{folder}/{cf}/temp/parcelstable.dbf",
+        'zone': 'PID'
+    }
+
+    s_area = {
+        'path': f"{folder}/{cf}/temp/segtable.dbf",
+        'zone': 'SID'
+    }
+
+    # list of rasters and the zone units
+    dict_dict = {
+        'p_area': p_area,
+        's_area': s_area,
+        'luz_pid': luz_pid,
+        'luz_sid': luz_sid,
+        'lc_pid': lc_pid,
+        'c1719_sid': c1719_sid,
+        'c18_sid': c18_sid,
+        'c18_pid': c18_pid,
+        'n16_sid': n16_sid,
+        # 'n16_pid': n16_pid
+    }
 
     new_cols = []
+    missing_TA = []
+    for dname, tadict in dict_dict.items():
+        tabPath = tadict['path']
+        if not os.path.isfile(tabPath):
+            missing_TA.append(tabPath)
+            print(f"TA MISSING FILE: {tabPath}")
+    if len(missing_TA) > 0:
+        print(f'ERROR! Missing TA files! Exiting...\n {missing_TA}')
+
+        sys.exit()
 
     for dname, tadict in dict_dict.items():
         merge_st = time.time()
@@ -202,7 +189,7 @@ def joinData(psegs, remove_columns):
             if dname in ('luz_pid', 'luz_sid'):
                 print(dname, " - group 1 (LUZ only)")
 
-                # Esri has named the no-data column for LUZ as A__ or __A from arcpy.TabulateArea(), unclear why. Shoot me.
+                # Esri has named the no-data column for LUZ as A__ or __A from esri's TabulateArea(), unclear why. Shoot me.
                 for none_col in ('A__', '__A'):
                     if none_col in tabledf.columns:
                         tabledf = tabledf.rename(columns={none_col: 'no_luz'})
@@ -223,7 +210,6 @@ def joinData(psegs, remove_columns):
 
                 print(f'merging {dname} to psegs by {zoneID}')
                 psegs = psegs.merge(tabledf, on=zoneID, how='left')
-                etime(folder, cf, f"merged {dname}", merge_st)
 
             if dname in ('s_area', 'p_area'):
                 print(dname, " - group 2 (areas)")
@@ -233,7 +219,7 @@ def joinData(psegs, remove_columns):
                 print(f'merging {dname} to psegs by {zoneID}')
                 print(f'columns: {tabledf.columns}')
                 psegs = psegs.merge(tabledf, on=zoneID, how='left')
-                etime(folder, cf, f"merged {dname}", merge_st)
+
 
             if dname not in ('luz_pid', 'luz_sid', 's_area', 'p_area'):
                 print(dname, " - group 3 (everything else)")
@@ -245,7 +231,7 @@ def joinData(psegs, remove_columns):
 
                 print(f'merging {dname} to psegs by {zoneID}')
                 psegs = psegs.merge(tabledf, on=zoneID, how='left')
-                etime(folder, cf, f"merged {dname}", merge_st)
+
 
         else:
             print(f"bad file path {tabPath}")
@@ -253,11 +239,14 @@ def joinData(psegs, remove_columns):
             sys.exit()
 
     print('final columns')
-    for fincol in psegs.columns:
-        if fincol not in ('Class_name','p_luz','s_luz','geometry'):
-            psegs[fincol] = psegs[fincol].fillna(0)
-            psegs[fincol] = psegs[fincol].astype('int32')
-        print(fincol, psegs[fincol].dtype)
+    try:
+        for fincol in psegs.columns:
+            if fincol not in ('Class_name','p_luz','s_luz','geometry'):
+                psegs[fincol] = psegs[fincol].fillna(0)
+                psegs[fincol] = psegs[fincol].astype('int32')
+            print(fincol, psegs[fincol].dtype)
+    except:
+        print(psegs.dtypes)
 
     etime(cf, psegs, "joinData()", jd_st)
 

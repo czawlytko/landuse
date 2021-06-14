@@ -18,6 +18,8 @@ from rasterio.windows import from_bounds
 from rasterio.transform import Affine
 from osgeo import gdal, osr, gdalconst
 
+import luconfig
+
 def etime(cf, note, starttime):
     # print text and elapsed time in HMS or Seconds if time < 60 sec
     elapsed =  time.time()-starttime
@@ -138,126 +140,8 @@ def get_lu_code(description, getKey):
             getKey - boolean; False if passing description to get value, True if passing value to get description
     Returns: LU code value based on description
     """
-    lu_code_dict = {
-        'Water LC' : 1,
-        'Emergent Wetlands LC': 2,
-        'Tree Canopy LC': 3,
-        'Shrubland LC': 4,
-        'Low Vegetation LC': 5,
-        'Barren LC': 6,
-        'Structures LC': 7,
-        'Impervious Surfaces LC': 8,
-        'Impervious Roads LC': 9,
-        'Emergent Wetlands' : 5000, # was 2
-        'Tree Canopy' : 3100,  # was 3
-        'Other Impervious Surfaces' : 2130, # was 8
-        'Water':1000,
-        'Estuary (tidal)' : 1110,
-        'Lakes & Ponds' : 1120,
-        'Lake or Pond' : 1120, # rev1
-        'Open Channel' : 1211,
-        'TC over Channel' : 1212,
-        'Culverted/Buried Channel' : 1213,
-        'Open Ditch' : 1221,
-        'TC over Ditch' : 1222,
-        'Culverted/Buried Ditch' : 1223,
-        'Impervious Roads' : 2110,
-        'Roads' : 2110, #rev1
-        'Structures' : 2120,
-        'Buildings' : 2120, # rev1
-        'Other Impervious' : 2130,
-        'TC over Roads' : 2141,
-        'TC over Structures' : 2142,
-        'TC over Other Impervious' : 2143,
-        'Turf Grass' : 2210,
-        'Turf Herbaceous Low Vegetation' : 2210, #rev1
-        'Turf Herbaceous' : 2210, #rev1
-        'Bare Developed' : 2220,
-        'Developed Barren' : 2220, #rev1
-        'Suspended Sucession Barren':2231,
-        'Suspended Succession Barren' : 2231, # rev1
-        'Suspended Sucession Herbaceous':2232,
-        'Suspended Succession Herbaceous' : 2232, # rev1
-        'Suspended Succession Low Vegetation' : 2232, #rev1
-        'Suspended Sucession Scrub-Shrub':2233,
-        'Suspended Succession Scrub\Shrub': 2233, #rev1
-        'Suspended Succession Scrub-Shrub' : 2233, #roll up csv
-        'TC over Turf Grass' : 2240,
-        'Forest' : 3000,
-        'Forest Forest' : 3100,
-        'TC in Agriculture' : 3200,
-        'Harvested Forest Barren' : 3310,
-        'Timber Harvest Barren' : 3310, #rev1
-        'Harvested Forest Low Vegetation' : 3320, # rev1
-        'Timber Harvest Low Vegetation' : 3320, # rev1
-        'Harvested Forest Herbaceous' : 3320,
-        'Timber Harvest Scrub\Shrub' : 3330, #rev1 - CLASS DID NOT EXIST BEFORE
-        'Harvested Forest Scrub\Shrub' : 3330, #rev1 - CLASS DID NOT EXIST BEFORE
-        'Natural Succession' : 3420, # rev1
-        'Natural Succession Barren' : 3410,
-        'Natural Succession Herbaceous' : 3420,
-        'Natural Succession Low Vegetation' : 3420, # rev1
-        'Natural Succession Scrub-Shrub' :3430,
-        'Natural Succession Scrub\Shrub' : 3430, # rev1
-        'Agricultural General- Barren':4101,
-        'Agricultural General- Herbaceous':4102,
-        'Agricultural General- Scrub-Shrub':4103,
-        'Cropland Barren' : 4111,
-        'Crop Barren' : 4111, #rev1
-        'Cropland Herbaceous' : 4112,
-        'Crop Low Vegetation' : 4112, #rev1
-        'Crop Scrub\Shrub' : 4113, #rev1 - CLASS DID NOT EXIST BEFORE
-        'Pasture/Hay Barren (Former Fallow)' : 4121,
-        'Pasture/Hay Herbaceous (Former Fallow)' : 4122,
-        'Pasture/Hay Scrub-Shrub' : 4123,
-        'Orchard/Vineyard Barren' : 4131,
-        'Orchard Vineyard Barren' : 4131, #rev1
-        'Orchard/Vineyard Herbaceous' : 4132,
-        'Orchard Vineyard Low Vegetation' : 4132,  # rev1
-        'Orchard/Vineyard Scrub-Shrub' : 4133,
-        'Orchard Vineyard Scrub\Shrub' : 4133, #rev1
-        'Pasture/Hay Barren' : 4141,
-        'Pasture Barren' : 4141, #rev1
-        'Pasture/Hay Herbaceous' : 4142,
-        'Pasture Low Vegetation' : 4142,  # rev1
-        'Pasture Scrub\Shrub' : 4143, #rev1 - CLASS DID NOT EXIST BEFORE
-        'Idle/Fallow Scrub-Shrub' : 4143,
-        'Solar Fields Impervious' : 4210,
-        'Solar Fields Pervious Barren' : 4221,
-        'Solar Fields Pervious Herbaceous' : 4222,
-        'Solar Low Vegetation' : 4222, #rev1
-        'Solar Fields Pervious Scrub-Shrub' : 4223,
-        'Extractive Barren' : 4310,
-        'Extractive Other Impervious' : 4320,
-        'Wetland':5000,
-        'Tidal Barren' : 5101,
-        'Tidal Herbaceous' : 5102,
-        'Tidal Scrub-Shrub' : 5103,
-        'Tidal Tree Canopy' : 5104,
-        'Tidal Forest' : 5105,
-        'Riverine (Non-Tidal) Wetlands- Barren':5201,
-        'Riverine (Non-Tidal) Wetlands- Herbaceous':5202,
-        'Riverine (Non-Tidal) Wetlands- Scrub-Shrub':5203,
-        'Riverine (Non-Tidal) Wetlands- Tree Canopy':5204,
-        'Riverine (Non-Tidal) Wetlands- Forest':5205,
-        'Headwater Barren' : 5211,
-        'Headwater Herbaceous' : 5212,
-        'Headwater Scrub-Shrub' : 5213,
-        'Headwater Tree Canopy' : 5214,
-        'Headwater Forest' : 5215,
-        'Floodplain Barren' : 5221,
-        'Floodplain Herbaceous' : 5222,
-        'Floodplain Scrub-Shrub' : 5223,
-        'Floodplain Tree Canopy' : 5224,
-        'Floodplain Forest' : 5225,
-        'Terrene/Isolated Wetlands Barren' : 5301,
-        'Terrene/Isolated Wetlands Herbaceous' : 5302,
-        'Terrene/Isolated Wetlands Scrub-Shrub' : 5303,
-        'Terrene/Isolated Wetlands Tree Canopy' : 5304,
-        'Terrene/Isolated Wetlands Forest' : 5305,
-        'Bare Shore' : 5400,
-        'Shore Barren' : 5400 # rev1
-        }
+    lu_code_dict = luconfig.lu_code_dict
+    
     if description == 'ALL':
         return lu_code_dict
     if getKey: # need key from value

@@ -85,6 +85,7 @@ def datacheck(cf, psegs, folder):
             'p_c18_1', 'p_c18_2', 'p_c18_3', 'p_c18_4',
             's_c1719_1', 's_c1719_2', 's_c1719_3', 's_c1719_4',
             'p_luz','s_luz',
+            'lu_code'
             ]
 
     non_int32_columns = [ 'Class_name','p_luz','s_luz', 'logic', 'lu', 'geometry']
@@ -98,8 +99,7 @@ def datacheck(cf, psegs, folder):
     LC_classes = psegs.Class_name.unique()
     print(LC_classes)
     
-    
-    # psegs = psegs[(psegs.Class_name != "")] # this removed psegs we watned to keep
+    psegs = psegs[(psegs.Class_name != "")] # this removed psegs we wanted to keep
     post = len(psegs)
     LC_classes = psegs.Class_name.unique()
     print(LC_classes)
@@ -132,6 +132,9 @@ def datacheck(cf, psegs, folder):
         psegs['PSID'] = [int(x) for x in range(1, len(psegs) + 1)]
 
 
+    for col in psegs.columns:
+        print(col)
+
     print(f"PSEG rows   : {len(psegs)}")
     print(f"Unique PSIDs: {len(psegs.PSID.unique())}")
     print(f"Unique PIDs : {len(psegs.PID.unique())}")
@@ -160,6 +163,8 @@ def datacheck(cf, psegs, folder):
                 psegs[col] = psegs[col].astype('int32')
             else:
                 print(f"Required column missing! - {col}")
+                
+
 
             
         if col not in non_int32_columns:
@@ -820,7 +825,7 @@ def getSucAge(ageRas, feature):
 ################################ MAIN ################################
 ######################################################################
 
-def RUN(cf, test):
+def RUN(cf, add_data, test):
 
     folder = luconfig.folder
     destinationDir = luconfig.dest
@@ -838,7 +843,7 @@ def RUN(cf, test):
 
 ##################################### 
     if test:
-        print('--landuse.RUN() Test: ', test, type(test))
+        print('--landuse.RUN() Test: ', test)
         # psegsPath = r"B:/landuse/testing_subsets/psegs_sub4.gpkg" # for checking nat succession
         # inLayer = 'psegs'
         # make output name with iteration
@@ -853,7 +858,7 @@ def RUN(cf, test):
         outLayer = 'psegs_lu'
 
     else:
-        print('--landuse.RUN() Test: ', test, type(test))
+        print('--landuse.RUN() Test: ', test)
         psegsPath = f"{folder}/{cf}/input/data.gpkg" # output will swap 'input' to 'output' and layer 'psegs_lu'
         inLayer = 'psegs_joined'
         outPath = psegsPath.replace('input','output')
@@ -887,7 +892,8 @@ def RUN(cf, test):
             with fiona.open(psegsPath, layer=layername) as src:
                 print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
 
-    psegs = joinData(psegs, True) # replace remove_columns bool with column check 
+    if add_data:
+        psegs = joinData(cf, psegs, True) # replace remove_columns bool with column check 
 
     psegs = datacheck(cf, psegs, folder)
 
@@ -932,7 +938,7 @@ def RUN(cf, test):
     df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']) ) & (psegs.s_area < 2000) & ((psegs.s_c18_1 + psegs.s_c18_2 + psegs.s_c18_3 + psegs.s_c18_4) < (psegs.s_area*0.5))]
     df2 = psegs[(psegs.Class_name == 'Roads')]
     adjacency_mp(psegs, 'Suspended Succession', 'roadside sus', df1, df2, 'percent', 0.25, batch_size) # switched from adjacent at all to 25% of total perimeter must intersect with road
-    etime(cf, psegs,  "Road-side Suspended Succession Adjacency", st_roads)
+    etime(cf, psegs, "Road-side Suspended Succession Adjacency", st_roads)
 
     # reference CDL and NCLD tabulations for Crp, OrVin, and Pas
     ag_cdl(cf, psegs, folder)
@@ -1088,10 +1094,10 @@ def RUN(cf, test):
     psegs.loc[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation'])), 'lu'] = "Suspended Succession Herbaceous"
 
     ## Classification finished
-
-    psegs.loc[(psegs.lu == "Tree Canopy Over Roads"), 'Class_name'] = "Tree Canopy Over Roads"
-    psegs.loc[(psegs.lu == "Tree Canopy Over Other Impervious Surfaces"), 'Class_name'] = "Tree Canopy Over Other Impervious Surfaces"
-    psegs.loc[(psegs.lu == "Tree Canopy Over Structures"), 'Class_name'] = "Tree Canopy Over Structures"
+    # print('Restoring TC over LC Class_names')
+    # psegs.loc[(psegs.lu == "Tree Canopy Over Roads"), 'Class_name'] = "Tree Canopy Over Roads"
+    # psegs.loc[(psegs.lu == "Tree Canopy Over Other Impervious Surfaces"), 'Class_name'] = "Tree Canopy Over Other Impervious Surfaces"
+    # psegs.loc[(psegs.lu == "Tree Canopy Over Structures"), 'Class_name'] = "Tree Canopy Over Structures"
 
     name_dict = luconfig.name_dict
     # clean up lu names to match final format
@@ -1103,18 +1109,18 @@ def RUN(cf, test):
     if len(psegs[(psegs.lu.isna())]) != 0:
         print("No LU count: ", len(psegs[(psegs.lu.isna())]))
 
-    # POPULATE lucode 
-    psegs['lucode'] = 0
-    # populate lucode field if value in dictionary
+    # POPULATE lu_code
+    psegs['lu_code'] = 0
+    # populate lu_code field if value in dictionary
     for lu in psegs.lu.unique():
         if lu in luconfig.lu_code_dict.keys():
             for k, v in luconfig.lu_code_dict.items():
                 if k == lu:
-                    psegs.loc[(psegs.lu == k), 'lucode'] = v
+                    psegs.loc[(psegs.lu == k), 'lu_code'] = v
         else:
             print("\n", lu, " not in keys")
 
-    print(psegs.lucode.unique())
+    print(psegs.lu_code.unique())
     
     ########################
 
@@ -1126,7 +1132,7 @@ def RUN(cf, test):
 
     if not test:
         print('WARNING: Clearing fields from psegs')
-        psegs = psegs[['PSID', 'PID', 'SID', 'Class_name', 'lu', 'logic', 'geometry']]
+        psegs = psegs[['PSID', 'PID', 'SID', 'Class_name', 'lu', 'logic', 'lu_code', 'geometry']]
 
     print(f'Saving psegs to file...')
     print(f'--outPath: {outPath}\n--outLayer: {outLayer}')

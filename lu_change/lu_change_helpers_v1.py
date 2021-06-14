@@ -17,9 +17,12 @@ import pandas as pd
 import sys
 from rasterio.windows import from_bounds
 
+import luconfig
+
 ##########################################################################################
 #---------------------- GETTERS ---------------------------------------------------------#
 ##########################################################################################
+
 def get_lu_code(description, getKey):
     """
     Method: get_lu_code()
@@ -31,117 +34,8 @@ def get_lu_code(description, getKey):
                               False if passing LU description and want LU code
     Returns: description/code or -1 if key/description is not in dict
     """
-    lu_code_dict = {
-        # 'Emergent Wetlands' : 5000, # was 2
-        # 'Tree Canopy' : 3100,  # was 3
-        # 'Other Impervious Surfaces' : 2130, # was 8
-        'Water':1000,
-        'Estuary (tidal)' : 1110,
-        'Lakes & Ponds' : 1120,
-        # 'Lake or Pond' : 1120, # rev1
-        'Open Channel' : 1211,
-        'TC over Channel' : 1212,
-        'Culverted/Buried Channel' : 1213,
-        'Open Ditch' : 1221,
-        'TC over Ditch' : 1222,
-        'Culverted/Buried Ditch' : 1223,
-        'Impervious Roads' : 2110,
-        # 'Roads' : 2110, #rev1
-        'Structures' : 2120,
-        # 'Buildings' : 2120, # rev1
-        'Other Impervious' : 2130,
-        'TC over Roads' : 2141,
-        'TC over Structures' : 2142,
-        'TC over Other Impervious' : 2143,
-        'Turf Grass' : 2210,
-        # 'Turf Herbaceous Low Vegetation' : 2210, #rev1
-        # 'Turf Herbaceous' : 2210, #rev1
-        'Bare Developed' : 2220,
-        # 'Developed Barren' : 2220, #rev1
-        'Suspended Sucession Barren':2231,
-        # 'Suspended Succession Barren' : 2231, # rev1
-        'Suspended Sucession Herbaceous':2232,
-        # 'Suspended Succession Herbaceous' : 2232, # rev1
-        # 'Suspended Succession Low Vegetation' : 2232, #rev1
-        'Suspended Sucession Scrub-Shrub':2233,
-        # 'Suspended Succession Scrub\Shrub': 2233, #rev1
-        # 'Suspended Succession Scrub-Shrub' : 2233, #roll up csv
-        'TC over Turf Grass' : 2240,
-        'Forest' : 3000,
-        'Forest Forest' : 3100,
-        'TC in Agriculture' : 3200,
-        'Harvested Forest Barren' : 3310,
-        # 'Timber Harvest Barren' : 3310, #rev1
-        # 'Harvested Forest Low Vegetation' : 3320, # rev1
-        # 'Timber Harvest Low Vegetation' : 3320, # rev1
-        'Harvested Forest Herbaceous' : 3320,
-        # 'Timber Harvest Scrub\Shrub' : 3330, #rev1 - CLASS DID NOT EXIST BEFORE
-        # 'Harvested Forest Scrub\Shrub' : 3330, #rev1 - CLASS DID NOT EXIST BEFORE
-        # 'Natural Succession' : 3420, # rev1
-        'Natural Succession Barren' : 3410,
-        'Natural Succession Herbaceous' : 3420,
-        # 'Natural Succession Low Vegetation' : 3420, # rev1
-        'Natural Succession Scrub-Shrub' :3430,
-        # 'Natural Succession Scrub\Shrub' : 3430, # rev1
-        'Agricultural General- Barren':4101,
-        'Agricultural General- Herbaceous':4102,
-        'Agricultural General- Scrub-Shrub':4103,
-        'Cropland Barren' : 4111,
-        # 'Crop Barren' : 4111, #rev1
-        'Cropland Herbaceous' : 4112,
-        # 'Crop Low Vegetation' : 4112, #rev1
-        # 'Crop Scrub\Shrub' : 4113, #rev1 - CLASS DID NOT EXIST BEFORE
-        'Pasture/Hay Barren (Former Fallow)' : 4121,
-        'Pasture/Hay Herbaceous (Former Fallow)' : 4122,
-        'Pasture/Hay Scrub-Shrub' : 4123,
-        'Orchard/Vineyard Barren' : 4131,
-        # 'Orchard Vineyard Barren' : 4131, #rev1
-        'Orchard/Vineyard Herbaceous' : 4132,
-        # 'Orchard Vineyard Low Vegetation' : 4132,  # rev1
-        'Orchard/Vineyard Scrub-Shrub' : 4133,
-        # 'Orchard Vineyard Scrub\Shrub' : 4133, #rev1
-        'Pasture/Hay Barren' : 4141,
-        # 'Pasture Barren' : 4141, #rev1
-        'Pasture/Hay Herbaceous' : 4142,
-        # 'Pasture Low Vegetation' : 4142,  # rev1
-        # 'Pasture Scrub\Shrub' : 4143, #rev1 - CLASS DID NOT EXIST BEFORE
-        'Idle/Fallow Scrub-Shrub' : 4143,
-        'Solar Fields Impervious' : 4210,
-        'Solar Fields Pervious Barren' : 4221,
-        'Solar Fields Pervious Herbaceous' : 4222,
-        # 'Solar Low Vegetation' : 4222, #rev1
-        'Solar Fields Pervious Scrub-Shrub' : 4223,
-        'Extractive Barren' : 4310,
-        'Extractive Other Impervious' : 4320,
-        'Wetland':5000,
-        'Tidal Barren' : 5101,
-        'Tidal Herbaceous' : 5102,
-        'Tidal Scrub-Shrub' : 5103,
-        'Tidal Tree Canopy' : 5104,
-        'Tidal Forest' : 5105,
-        'Riverine (Non-Tidal) Wetlands- Barren':5201,
-        'Riverine (Non-Tidal) Wetlands- Herbaceous':5202,
-        'Riverine (Non-Tidal) Wetlands- Scrub-Shrub':5203,
-        'Riverine (Non-Tidal) Wetlands- Tree Canopy':5204,
-        'Riverine (Non-Tidal) Wetlands- Forest':5205,
-        'Headwater Barren' : 5211,
-        'Headwater Herbaceous' : 5212,
-        'Headwater Scrub-Shrub' : 5213,
-        'Headwater Tree Canopy' : 5214,
-        'Headwater Forest' : 5215,
-        'Floodplain Barren' : 5221,
-        'Floodplain Herbaceous' : 5222,
-        'Floodplain Scrub-Shrub' : 5223,
-        'Floodplain Tree Canopy' : 5224,
-        'Floodplain Forest' : 5225,
-        'Terrene/Isolated Wetlands Barren' : 5301,
-        'Terrene/Isolated Wetlands Herbaceous' : 5302,
-        'Terrene/Isolated Wetlands Scrub-Shrub' : 5303,
-        'Terrene/Isolated Wetlands Tree Canopy' : 5304,
-        'Terrene/Isolated Wetlands Forest' : 5305,
-        'Bare Shore' : 5400,
-        # 'Shore Barren' : 5400 # rev1
-        }
+    lu_code_dict = luconfig.lu_code_dict
+
     if description == 'ALL':
         return lu_code_dict
     if getKey: # need key from value
@@ -167,34 +61,34 @@ def getWetlandTypes(val):
     """
     wetland_types_dict = {
         'Tidal' : [
-                        get_lu_code('Tidal Barren', False),
-                        get_lu_code('Tidal Forest', False),
-                        get_lu_code('Tidal Herbaceous', False),
-                        get_lu_code('Tidal Scrub-Shrub', False),
-                        get_lu_code('Tidal Tree Canopy', False)
+                        get_lu_code('Tidal Wetlands Barren', False),
+                        get_lu_code('Tidal Wetlands Forest', False),
+                        get_lu_code('Tidal Wetlands Herbaceous', False),
+                        get_lu_code('Tidal Wetlands Scrub/Shrub', False),
+                        get_lu_code('Tidal Wetlands Tree Canopy', False)
                     ],
         'Floodplain' : [
                         get_lu_code('Floodplain Barren', False),
                         get_lu_code('Floodplain Forest', False),
                         get_lu_code('Floodplain Herbaceous', False),
-                        get_lu_code('Floodplain Scrub-Shrub', False),
+                        get_lu_code('Floodplain Scrub/Shrub', False),
                         get_lu_code('Floodplain Tree Canopy', False),
-                        get_lu_code('Riverine (Non-Tidal) Wetlands- Barren', False),
-                        get_lu_code('Riverine (Non-Tidal) Wetlands- Forest', False),
-                        get_lu_code('Riverine (Non-Tidal) Wetlands- Herbaceous', False),
-                        get_lu_code('Riverine (Non-Tidal) Wetlands- Scrub-Shrub', False),
-                        get_lu_code('Riverine (Non-Tidal) Wetlands- Tree Canopy', False),
+                        get_lu_code('Riverine (Non-Tidal) Wetlands Barren', False),
+                        get_lu_code('Riverine (Non-Tidal) Wetlands Forest', False),
+                        get_lu_code('Riverine (Non-Tidal) Wetlands Herbaceous', False),
+                        get_lu_code('Riverine (Non-Tidal) Wetlands Scrub/Shrub', False),
+                        get_lu_code('Riverine (Non-Tidal) Wetlands Tree Canopy', False),
                         get_lu_code('Headwater Barren', False),
                         get_lu_code('Headwater Forest', False),
                         get_lu_code('Headwater Herbaceous', False),
-                        get_lu_code('Headwater Scrub-Shrub', False),
+                        get_lu_code('Headwater Scrub/Shrub', False),
                         get_lu_code('Headwater Tree Canopy', False)
                         ],
         'Other' : [
                     get_lu_code('Terrene/Isolated Wetlands Barren', False),
                     get_lu_code('Terrene/Isolated Wetlands Forest', False),
                     get_lu_code('Terrene/Isolated Wetlands Herbaceous', False),
-                    get_lu_code('Terrene/Isolated Wetlands Scrub-Shrub', False),
+                    get_lu_code('Terrene/Isolated Wetlands Scrub/Shrub', False),
                     get_lu_code('Terrene/Isolated Wetlands Tree Canopy', False)
                     ]
     }
@@ -411,10 +305,10 @@ def getContextChange(val):
     """
     context_dict = {
         'Barren to Low Vegetation'      : {
-            'Turf Grass'   : get_lu_code('Turf Grass', False), # WAS BARE DEVELOPED
+            'Turf Herbaceous'   : get_lu_code('Turf Herbaceous', False), # WAS BARE DEVELOPED
             'AG - crop'    : get_lu_code('Cropland Barren', False),
             'AG - pas'     : get_lu_code('Pasture/Hay Barren', False),
-            'Wetland - Tidal' : get_lu_code('Tidal Barren', False),
+            'Wetland - Tidal' : get_lu_code('Tidal Wetlands Barren', False),
             'Wetland - Floodplain' : get_lu_code('Floodplain Barren', False),
             'Wetland - Other' : get_lu_code('Terrene/Isolated Wetlands Barren', False),
             'else'         : get_lu_code('Natural Succession Barren', False)
@@ -425,10 +319,10 @@ def getContextChange(val):
             'else'         : get_lu_code('Bare Developed', False)
         },
         'Barren to Tree Canopy'         : { 
-            'TC over Turf Grass'        : get_lu_code('Suspended Sucession Barren', False),
-            'Forest'                    : get_lu_code('Suspended Sucession Barren', False),
-            'Forest Forest'             : get_lu_code('Suspended Sucession Barren', False),
-            'Wetland - Tidal'           : get_lu_code('Tidal Barren', False),
+            'Tree Canopy over Turf'        : get_lu_code('Suspended Succession Barren', False),
+            'Forest'                    : get_lu_code('Suspended Succession Barren', False),
+            'Forest Forest'             : get_lu_code('Suspended Succession Barren', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Barren', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Barren', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Barren', False),
             'AG - crop'                 : get_lu_code('Cropland Barren', False),
@@ -436,39 +330,39 @@ def getContextChange(val):
             'else'                      : get_lu_code('Natural Succession Barren', False)
         },
         'Emergent Wetlands to Barren' : { #5/7 update
-            'Wetland - Tidal'           : get_lu_code('Tidal Herbaceous', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Herbaceous', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Herbaceous', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Herbaceous', False),
             'else'         :       get_lu_code('Natural Succession Herbaceous', False)
         },
         'Emergent Wetlands to Low Vegetation' : {#5/7 update
-            'Wetland - Tidal'           : get_lu_code('Tidal Herbaceous', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Herbaceous', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Herbaceous', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Herbaceous', False),
             'else'         :       get_lu_code('Natural Succession Herbaceous', False)
         },
         'Emergent Wetlands to Tree Canopy' : {#5/7 update
-            'Wetland - Tidal'           : get_lu_code('Tidal Herbaceous', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Herbaceous', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Herbaceous', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Herbaceous', False),
             'else'         :       get_lu_code('Natural Succession Herbaceous', False)
         },
         'Emergent Wetlands to Water' : {#5/7 update
-            'Wetland - Tidal'           : get_lu_code('Tidal Herbaceous', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Herbaceous', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Herbaceous', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Herbaceous', False),
             'else'         :       get_lu_code('Natural Succession Herbaceous', False)
         },
         'Emergent Wetlands to Structures' : {
-            'Wetland - Tidal'           : get_lu_code('Tidal Herbaceous', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Herbaceous', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Herbaceous', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Herbaceous', False),
             'AG - crop'    :       get_lu_code('Cropland Herbaceous', False),      
             'AG - pas'     :       get_lu_code('Pasture/Hay Herbaceous', False),
-            'else'         :       get_lu_code('Suspended Sucession Herbaceous', False)
+            'else'         :       get_lu_code('Suspended Succession Herbaceous', False)
         },
         'Low Vegetation to Scrub\Shrub' : {
-            'Wetland - Tidal'           : get_lu_code('Tidal Herbaceous', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Herbaceous', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Herbaceous', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Herbaceous', False),
             'AG - crop'    :       get_lu_code('Cropland Herbaceous', False),      
@@ -476,8 +370,8 @@ def getContextChange(val):
             'else'         :       get_lu_code('Natural Succession Herbaceous', False)
         },
         'Low Vegetation to Tree Canopy' : {
-            'TC over Turf Grass' : get_lu_code('Turf Grass', False),
-            'Wetland - Tidal'           : get_lu_code('Tidal Herbaceous', False),
+            'Tree Canopy over Turf' : get_lu_code('Turf Herbaceous', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Herbaceous', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Herbaceous', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Herbaceous', False),
             'AG - crop'    :       get_lu_code('Cropland Herbaceous', False),      
@@ -485,36 +379,36 @@ def getContextChange(val):
             'else'         :       get_lu_code('Natural Succession Herbaceous', False)
         },
         'Scrub\Shrub to Barren'         : {
-            'Wetland - Tidal'           : get_lu_code('Tidal Scrub-Shrub', False),
-            'Wetland - Floodplain'      : get_lu_code('Floodplain Scrub-Shrub', False),
-            'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Scrub-Shrub', False),
-            'AG - crop'    :         get_lu_code('Orchard/Vineyard Scrub-Shrub', False),      
-            'AG - pas'     :         get_lu_code('Pasture/Hay Scrub-Shrub', False),      
-            'else'         :         get_lu_code('Natural Succession Scrub-Shrub', False)   
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Scrub/Shrub', False),
+            'Wetland - Floodplain'      : get_lu_code('Floodplain Scrub/Shrub', False),
+            'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Scrub/Shrub', False),
+            'AG - crop'    :         get_lu_code('Orchard/Vineyard Scrub/Shrub', False),      
+            'AG - pas'     :         get_lu_code('Pasture/Hay Scrub/Shrub', False),      
+            'else'         :         get_lu_code('Natural Succession Scrub/Shrub', False)   
         },
         'Scrub\Shrub to Low Vegetation' : {
-            'Wetland - Tidal'           : get_lu_code('Tidal Scrub-Shrub', False),
-            'Wetland - Floodplain'      : get_lu_code('Floodplain Scrub-Shrub', False),
-            'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Scrub-Shrub', False),
-            'AG - crop'    :                        get_lu_code('Orchard/Vineyard Scrub-Shrub', False),      
-            'AG - pas'     :                        get_lu_code('Pasture/Hay Scrub-Shrub', False),      
-            'Suspended Sucession Herbaceous'     :  get_lu_code('Suspended Sucession Scrub-Shrub', False),
-            'else'         :                        get_lu_code('Natural Succession Scrub-Shrub', False) 
+            'Wetland - Tidal'           : get_lu_code('Tidal Scrub/Shrub', False),
+            'Wetland - Floodplain'      : get_lu_code('Floodplain Scrub/Shrub', False),
+            'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Scrub/Shrub', False),
+            'AG - crop'    :                        get_lu_code('Orchard/Vineyard Scrub/Shrub', False),      
+            'AG - pas'     :                        get_lu_code('Pasture/Hay Scrub/Shrub', False),      
+            'Suspended Succession Herbaceous'     :  get_lu_code('Suspended Succession Scrub/Shrub', False),
+            'else'         :                        get_lu_code('Natural Succession Scrub/Shrub', False) 
         },
         'Scrub\Shrub to Other Impervious Surfaces'  : {
-            'AG - crop'    :            get_lu_code('Orchard/Vineyard Scrub-Shrub', False),      
-            'AG - pas'     :            get_lu_code('Pasture/Hay Scrub-Shrub', False),      
-            'else'         :            get_lu_code('Natural Succession Scrub-Shrub', False) 
+            'AG - crop'    :            get_lu_code('Orchard/Vineyard Scrub/Shrub', False),      
+            'AG - pas'     :            get_lu_code('Pasture/Hay Scrub/Shrub', False),      
+            'else'         :            get_lu_code('Natural Succession Scrub/Shrub', False) 
         },
         'Scrub\Shrub to Roads'          : {
-            'AG - crop'    :            get_lu_code('Orchard/Vineyard Scrub-Shrub', False),      
-            'AG - pas'     :            get_lu_code('Pasture/Hay Scrub-Shrub', False),      
-            'else'         :            get_lu_code('Natural Succession Scrub-Shrub', False)        
+            'AG - crop'    :            get_lu_code('Orchard/Vineyard Scrub/Shrub', False),      
+            'AG - pas'     :            get_lu_code('Pasture/Hay Scrub/Shrub', False),      
+            'else'         :            get_lu_code('Natural Succession Scrub/Shrub', False)        
         },
         'Scrub\Shrub to Structures'             : {
-            'AG - crop'    :            get_lu_code('Orchard/Vineyard Scrub-Shrub', False),      
-            'AG - pas'     :            get_lu_code('Pasture/Hay Scrub-Shrub', False),      
-            'else'         :            get_lu_code('Natural Succession Scrub-Shrub', False) 
+            'AG - crop'    :            get_lu_code('Orchard/Vineyard Scrub/Shrub', False),      
+            'AG - pas'     :            get_lu_code('Pasture/Hay Scrub/Shrub', False),      
+            'else'         :            get_lu_code('Natural Succession Scrub/Shrub', False) 
         }  
     }
     if val == 'ALL':
@@ -534,48 +428,48 @@ def getDirectChange(val):
     Returns: int lu code
     """
     direct_dict = {
-            'Other Impervious Surfaces to Tree Canopy' : get_lu_code('Other Impervious', False),
-            'Other Impervious Surfaces to Structures' : get_lu_code('Other Impervious', False),
-            'Other Impervious Surfaces to Roads' : get_lu_code('Other Impervious', False),
-            'Other Impervious Surfaces to Barren'   : get_lu_code('Other Impervious', False),
-            'Other Impervious Surfaces to Low Vegetation'   : get_lu_code('Other Impervious', False),
-            'Other Impervious Surfaces to Tree Canopy Over Other Impervious Surfaces'   : get_lu_code('Other Impervious', False),
-            'Other Impervious Surfaces to Water'   : get_lu_code('Other Impervious', False),
-            'Roads to Barren'   : get_lu_code('Impervious Roads', False),
-            'Roads to Low Vegetation'   : get_lu_code('Impervious Roads', False),
-            'Roads to Tree Canopy Over Roads'   : get_lu_code('Impervious Roads', False),
-            'Roads to Water'    : get_lu_code('Impervious Roads', False),
-            'Roads to Tree Canopy' : get_lu_code('Impervious Roads', False),
-            'Roads to Structures' : get_lu_code('Impervious Roads', False),
-            'Roads to Other Impervious Structures': get_lu_code('Impervious Roads', False), # REPLACE WITH Surfaces
-            'Roads to Other Impervious Surfaces' : get_lu_code('Impervious Roads', False),
-            'Scrub\Shrub to Tree Canopy'        : get_lu_code('Natural Succession Scrub-Shrub', False),
-            'Structures to Barren'  : get_lu_code('Structures', False),
-            'Structures to Low Vegetation'  : get_lu_code('Structures', False),
-            'Structures to Tree Canopy Over Structures' : get_lu_code('Structures', False),
-            'Structures to Water'   : get_lu_code('Structures', False),
-            'Structures to Tree Canopy' : get_lu_code('Structures', False),
-            'Structures to Other Impervious Surfaces' : get_lu_code('Structures', False),
-            'Structures to Roads' : get_lu_code('Structures', False),
-            'Tree Canopy Over Other Impervious Surfaces to Structures' : get_lu_code('TC over Other Impervious', False),
-            'Tree Canopy Over Other Impervious Surfaces to Other Impervious Surfaces' : get_lu_code('TC over Other Impervious', False),
-            'Tree Canopy Over Other Impervious Surfaces to Roads' : get_lu_code('TC over Other Impervious', False),
-            'Tree Canopy Over Other Impervious Surfaces to Barren'  : get_lu_code('TC over Other Impervious', False),
-            'Tree Canopy Over Other Impervious Surfaces to Low Vegetation'  : get_lu_code('TC over Other Impervious', False),
-            'Tree Canopy Over Other Impervious Surfaces to Water'   : get_lu_code('TC over Other Impervious', False),
-            'Tree Canopy Over Roads to Structures' : get_lu_code('TC over Roads', False),
-            'Tree Canopy Over Roads to Other Impervious Surfaces' : get_lu_code('TC over Roads', False),
-            'Tree Canopy Over Roads to Roads' : get_lu_code('TC over Roads', False),
-            'Tree Canopy Over Roads to Barren'  : get_lu_code('TC over Roads', False),
-            'Tree Canopy Over Roads to Low Vegetation'  : get_lu_code('TC over Roads', False),
-            'Tree Canopy Over Roads to Water'   : get_lu_code('TC over Roads', False),
-            'Tree Canopy Over Structures to Barren' : get_lu_code('TC over Structures', False),
-            'Tree Canopy Over Structures to Water'  : get_lu_code('TC over Structures', False),
-            'Tree Canopy Over Structures to Tree Canopy' : get_lu_code('TC over Structures', False),
-            'Tree Canopy Over Structures to Structures' : get_lu_code('TC over Structures', False),
-            'Tree Canopy Over Structures to Other Impervious Surfaces' : get_lu_code('TC over Structures', False),
-            'Tree Canopy Over Structures to Roads' : get_lu_code('TC over Structures', False),      
-            'Tree Canopy Over Structures to Low Vegetation'  : get_lu_code('TC over Structures', False),    
+            'Other Impervious Surfaces to Tree Canopy' : get_lu_code('Other Impervious Surface', False),
+            'Other Impervious Surfaces to Structures' : get_lu_code('Other Impervious Surface', False),
+            'Other Impervious Surfaces to Roads' : get_lu_code('Other Impervious Surface', False),
+            'Other Impervious Surfaces to Barren'   : get_lu_code('Other Impervious Surface', False),
+            'Other Impervious Surfaces to Low Vegetation'   : get_lu_code('Other Impervious Surface', False),
+            'Other Impervious Surfaces to Tree Canopy Over Other Impervious Surfaces'   : get_lu_code('Other Impervious Surface', False),
+            'Other Impervious Surfaces to Water'   : get_lu_code('Other Impervious Surface', False),
+            'Roads to Barren'   : get_lu_code('Roads', False),
+            'Roads to Low Vegetation'   : get_lu_code('Roads', False),
+            'Roads to Tree Canopy Over Roads'   : get_lu_code('Roads', False),
+            'Roads to Water'    : get_lu_code('Roads', False),
+            'Roads to Tree Canopy' : get_lu_code('Roads', False),
+            'Roads to Structures' : get_lu_code('Roads', False),
+            'Roads to Other Impervious Structures': get_lu_code('Roads', False), # REPLACE WITH Surfaces
+            'Roads to Other Impervious Surfaces' : get_lu_code('Roads', False),
+            'Scrub\Shrub to Tree Canopy'        : get_lu_code('Natural Succession Scrub/Shrub', False),
+            'Structures to Barren'  : get_lu_code('Buildings', False),
+            'Structures to Low Vegetation'  : get_lu_code('Buildings', False),
+            'Structures to Tree Canopy Over Structures' : get_lu_code('Buildings', False),
+            'Structures to Water'   : get_lu_code('Buildings', False),
+            'Structures to Tree Canopy' : get_lu_code('Buildings', False),
+            'Structures to Other Impervious Surfaces' : get_lu_code('Buildings', False),
+            'Structures to Roads' : get_lu_code('Buildings', False),
+            'Tree Canopy Over Other Impervious Surfaces to Structures' : get_lu_code('Tree Canopy over Other Impervious', False),
+            'Tree Canopy Over Other Impervious Surfaces to Other Impervious Surfaces' : get_lu_code('Tree Canopy over Other Impervious', False),
+            'Tree Canopy Over Other Impervious Surfaces to Roads' : get_lu_code('Tree Canopy over Other Impervious', False),
+            'Tree Canopy Over Other Impervious Surfaces to Barren'  : get_lu_code('Tree Canopy over Other Impervious', False),
+            'Tree Canopy Over Other Impervious Surfaces to Low Vegetation'  : get_lu_code('Tree Canopy over Other Impervious', False),
+            'Tree Canopy Over Other Impervious Surfaces to Water'   : get_lu_code('Tree Canopy over Other Impervious', False),
+            'Tree Canopy Over Roads to Structures' : get_lu_code('Tree Canopy over Roads', False),
+            'Tree Canopy Over Roads to Other Impervious Surfaces' : get_lu_code('Tree Canopy over Roads', False),
+            'Tree Canopy Over Roads to Roads' : get_lu_code('Tree Canopy over Roads', False),
+            'Tree Canopy Over Roads to Barren'  : get_lu_code('Tree Canopy over Roads', False),
+            'Tree Canopy Over Roads to Low Vegetation'  : get_lu_code('Tree Canopy over Roads', False),
+            'Tree Canopy Over Roads to Water'   : get_lu_code('Tree Canopy over Roads', False),
+            'Tree Canopy Over Structures to Barren' : get_lu_code('Tree Canopy over Structures', False),
+            'Tree Canopy Over Structures to Water'  : get_lu_code('Tree Canopy over Structures', False),
+            'Tree Canopy Over Structures to Tree Canopy' : get_lu_code('Tree Canopy over Structures', False),
+            'Tree Canopy Over Structures to Structures' : get_lu_code('Tree Canopy over Structures', False),
+            'Tree Canopy Over Structures to Other Impervious Surfaces' : get_lu_code('Tree Canopy over Structures', False),
+            'Tree Canopy Over Structures to Roads' : get_lu_code('Tree Canopy over Structures', False),      
+            'Tree Canopy Over Structures to Low Vegetation'  : get_lu_code('Tree Canopy over Structures', False),    
             'Water to Barren'   : get_lu_code('Water', False),
             'Water to Buildings'    : get_lu_code('Water', False),
             'Water to Low Vegetation'   : get_lu_code('Water', False),
@@ -938,7 +832,7 @@ def maskRasByGeom(args):
     """
     rasPath, rasPath2, geoms, vals = args
     id_list, geom_list = [], []
-    turf_val = get_lu_code('Turf Grass', False)
+    turf_val = get_lu_code('Turf Herbaceous', False)
     with rio.open(rasPath) as src_co:
         with rio.open(rasPath2) as src_co2:
             for id_field, geom in geoms:
@@ -1199,10 +1093,10 @@ def indirectTC(tree_canopy_gdf, psegs, lu_change_gdf):
             joined_table = sjoin_mp6(psegs[psegs['lu'].isin(turf_classes)], 15000, 'intersects', ['zone'], tree_canopy_gdf)
             ns_zones = list(lu_change_gdf[lu_change_gdf['LC_Change']=='Tree Canopy to Tree Canopy NS']['zone'])
             tct = list(set(list(joined_table['zone'])) - set(ns_zones))
-            lu_change_gdf.loc[(lu_change_gdf['zone'].isin(ns_zones)) & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('TC in Agriculture', False)
-            lu_change_gdf.loc[lu_change_gdf['zone'].isin(tct) & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('TC over Turf Grass', False)
+            lu_change_gdf.loc[(lu_change_gdf['zone'].isin(ns_zones)) & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Tree Canopy in Agriculture', False)
+            lu_change_gdf.loc[lu_change_gdf['zone'].isin(tct) & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Tree Canopy over Turf', False)
             rem_zones = list(tree_canopy_gdf['zone'])
-            lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones)) & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('TC in Agriculture', False)
+            lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones)) & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Tree Canopy in Agriculture', False)
     return lu_change_gdf
 
 def indirectLV(low_veg_gdf, lu_change_gdf):
@@ -1217,7 +1111,7 @@ def indirectLV(low_veg_gdf, lu_change_gdf):
     # """
     lu_change_gdf.loc[(lu_change_gdf['TYPE']=='crop') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Cropland Herbaceous', False)
     lu_change_gdf.loc[(lu_change_gdf['TYPE']=='pasture') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Pasture/Hay Herbaceous', False)
-    lu_change_gdf.loc[(lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Suspended Sucession Herbaceous', False) 
+    lu_change_gdf.loc[(lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Suspended Succession Herbaceous', False) 
 
     return lu_change_gdf
 
@@ -1245,8 +1139,8 @@ def indirectSS(scrub_gdf, lu_change_gdf):
     Returns: lu_change_gdf
     """
     rem_zones = list(scrub_gdf['zone'])
-    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='crop') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Orchard/Vineyard Scrub-Shrub', False)
-    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='pasture') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Pasture/Hay Scrub-Shrub', False)
-    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='other') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Natural Succession Scrub-Shrub', False)
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='crop') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Orchard/Vineyard Scrub/Shrub', False)
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='pasture') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Pasture/Hay Scrub/Shrub', False)
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='other') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Natural Succession Scrub/Shrub', False)
  
     return lu_change_gdf

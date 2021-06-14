@@ -252,7 +252,7 @@ def runTCT(args):
     """
     psegs, allAg, allTurf, tile, cf, NUM_CPUS = args
     crs = psegs.crs
-    lusToKeep = allAg + allTurf + ['Buildings', 'Other Impervious Surfaces']
+    lusToKeep = allAg + allTurf + ['Buildings', 'Other Impervious Surface']
     st = time.time()
     roads = psegs[(psegs['lu'] == 'Roads') | (psegs['Class_name'] == 'Roads')]
     psegs = psegs[(psegs['lu'] != 'Roads') & (psegs['Class_name'] != 'Roads')]

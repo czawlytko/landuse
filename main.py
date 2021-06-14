@@ -69,17 +69,18 @@ if __name__ == "__main__":
         print("--batch_size: ", batch_size)
 
         run_dp = False
-        run_lu = False
-        run_tc = False
+        add_data = True # join TA tables to psegs
+        run_lu = True
+        run_tc = True
         run_bi = True
-        run_change = True
+        run_change = False
 
         # if not dp_outs.exist() and run_dp:
         #     prep.RUN(folder, cf)
 
         if run_lu:
             helpers.county_check(cf) # check ancillary data and fips and...
-            psegs = landuse.RUN(cf, test)
+            psegs = landuse.RUN(cf, add_data, test) # cf, adddata bool, test bool)
         else:
             print('Did not run lu')
 
