@@ -49,7 +49,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
                 0 - module ran and created trees over geopackage
                 -1 - exception was thrown and data may not have been created
     """
-    #Calculate number of tiles to run at once
+    # Calculate number of tiles to run at once
     NUM_TILES = int((mp.cpu_count() - 2) / (NUM_CPUS + 1))
     if NUM_TILES < 1:
         print("ERROR: Core distribution would result in 0 tiles running at a time")
@@ -84,6 +84,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     print("********* STARTING ", cf, " *************")
     print("*********************************************\n")
 
+
     # try: #if a county fails - don't kill thread
     start = time.time()
     densePIDs = callDense.runDense(parcels_gpkg, parcels_layer, urban_shp) #get dense parcels
@@ -98,7 +99,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
 
     chunk_iterator = []
     for idx, row in tiles.iterrows():
-        psegs = env_pkg.readPolysMask(psegsPath, psegsLayer, row['geometry'].envelope) #read in psegs layer
+        psegs = env_pkg.readPolysMask(psegsPath, psegsLayer, row['geometry'].envelope) # read in psegs layer
         note = "Read psegs gpkg for tile " + str(row['Id'])
         etime(cf, note, st)
         st = time.time()
@@ -802,7 +803,7 @@ def shared_border_mp(ag_segs, forest, r_field, NUM_CPUS):
     Returns: results - list of forest patch Ids that will be classed as trees in ag (> half of border is shared with ag)
     """
     st = time.time() # ONLY NEED FOR TESTING
-    ag_for = sjoin_mp6(ag_segs, 10000, 'intersects', ['Id', 'PSID'], forest, NUM_CPUS)
+    ag_for = sjoin_mp6(ag_segs, luconfig.batch_size, 'intersects', ['Id', 'PSID'], forest, NUM_CPUS)
     elapsed = time.time()-st # ONLY NEED FOR TESTING
     print("Shared border sjoin time: ", elapsed) # ONLY NEED FOR TESTING
 

@@ -9,7 +9,7 @@ Forest,Forest Forest
 Forest,Tree Canopy in Agriculture
 Forest,Tree Canopy
 Impervious Non-Roads,Other Impervious
-Impervious Non-Roads,Solar Fields Impervious
+Impervious Non-Roads,Solar Field Impervious
 Impervious Non-Roads,Buildings
 Impervious Roads,Roads
 Mixed Open,Bare Developed
@@ -21,9 +21,9 @@ Mixed Open,Harvested Forest Herbaceous
 Mixed Open,Natural Succession Barren
 Mixed Open,Natural Succession Herbaceous
 Mixed Open,Natural Succession Scrub/Shrub
-Mixed Open,Solar Fields Barren
-Mixed Open,Solar Fields Herbaceous
-Mixed Open,Solar Fields Scrub/Shrub
+Mixed Open,Solar Field Barren
+Mixed Open,Solar Field Herbaceous
+Mixed Open,Solar Field Scrub/Shrub
 Mixed Open,Suspended Succession Barren
 Mixed Open,Suspended Succession Herbaceous
 Mixed Open,Suspended Succession Scrub/Shrub

@@ -1,12 +1,16 @@
 anci_folder = r"B:/ancillary"
-folder = f'B:/landuse/version1'
+folder = f'B:/landuse/version1/old'
 # folder = f'B:/landuse/rev1/batch_test'
-batch_size = 10000
+batch_size = 10000 # used in landuse_rev2 and TC_LU_Submodule_v1
 batch_log_Path = f"{folder}/batch_log.txt"
+
+TC_Tile_Min = 150000 # thresholds for minimum number of psegs required to generate tiles
+TC_Tile_Max = 500000
+TC_CPUS = 15 # number of cores to be used to help divide total core count and balance processes.
 
 dest  = f""
 test = True
-TC_CPUS = 15 # num of cores to be used to help divide total core count and balance processes.
+
 anci_dict = {
     'landfillPath' : r"20172018_Landfills/CBW_digitized_landfills_2017_2018_20210517.shp", # updated 4/26/21
     'solarPath' : r"solarfields/CBW_solarAI_20172018.shp", # updated 4/26/21
@@ -23,7 +27,7 @@ anci_dict = {
 dp_file_list = [
         f"psegs.gpkg",
         f"segments.gpkg",
-        f"TEMP_Parcels.tif",  #used for re-vectorizing
+        f"TEMP_Parcels.tif",  # used for re-vectorizing
         f"temp_dataprep.gpkg", # (parcels)
         f"",# All of the tabulate area .csvs (named by their value for each SID/PID key)
         f"ps_segs.tif",

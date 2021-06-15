@@ -1080,7 +1080,6 @@ def RUN(cf, add_data, test):
     psegs.loc[(psegs.lu.isna()) & (psegs.s_luz == 'AG_GEN') & (psegs.s_area > 10000) & (psegs.p_lc_5 > psegs.p_area*0.5) & (psegs.Class_name.isin(['Low Vegetation'])), 'logic'] = "ag_gen last chance"
     psegs.loc[(psegs.lu.isna()) & (psegs.s_luz == 'AG_GEN') & (psegs.s_area > 10000) & (psegs.p_lc_5 > psegs.p_area*0.5) & (psegs.Class_name.isin(['Low Vegetation'])), 'lu'] = "Cropland Herbaceous"
 
-
     # rev2 6/4 -added
     maj_lc_vals = ['Low Vegetation']
     maj_lu_exclusions = ['Turf Herbaceous', 'Turf Low Vegetation']
@@ -1089,7 +1088,6 @@ def RUN(cf, add_data, test):
     print('TESTING AG P MAJ REPLACE')
 
     # All remaining LV
-
     psegs.loc[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation'])), 'logic'] = "Whatevers left"
     psegs.loc[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation'])), 'lu'] = "Suspended Succession Herbaceous"
 

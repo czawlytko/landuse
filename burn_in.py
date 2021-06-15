@@ -48,44 +48,42 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     """
     #run a check to ensure trees_over.gpkg exists?
 
-    # proj_folder= proj_folder #r'B:\landuse\rev1\batch_test'
-    # anci_folder= anci_folder #r'B:\ancillary\wetlands'
-    tidal_lookup = fr'{anci_folder}\tidal_lookup.csv'
-    slr_ras = fr'{anci_folder}\SLR_1.tif'
-    symb_table= fr'{anci_folder}\land_use_color_table_20210503.csv'
-    county_shp = fr'{anci_folder}\census\BayCounties20m_project.shp'
+    tidal_lookup = f'{anci_folder}/wetlands/tidal_lookup.csv'
+    slr_ras = f'{anci_folder}/SLR_1.tif'
+    symb_table= f'{anci_folder}/land_use_color_table_20210503.csv'
+    county_shp = f'{anci_folder}/census/BayCounties20m_project.shp'
 
 
     ##########build file paths############
-    rail_path= fr'{anci_folder}\rail\rail_baywide.tif'
+    rail_path= f'{anci_folder}/rail/rail_baywide.tif'
 
-    lc_folder= Path(fr'{proj_folder}\{cf}\input')
+    lc_folder= Path(f'{proj_folder}/{cf}/input')
     og_lc_path= list(lc_folder.rglob(fr'*_landcover_*.tif'))[0]
     
     #masked lc path
     lc_path= os.path.splitext(og_lc_path)[0] + '_mask.tif'
 
-    tc_path= fr'{proj_folder}\{cf}\output\trees_over.gpkg'
+    tc_path= f'{proj_folder}/{cf}/output/trees_over.gpkg'
     
-    tc_composite_path= fr'{proj_folder}\{cf}\output\tc_composite.tif'
+    tc_composite_path= f'{proj_folder}/{cf}/output/tc_composite.tif'
 
-    pond_path= fr'{proj_folder}\{cf}\output\wetlands\ponds.gpkg' #file structure change 06-09-21
-    pond_ras_path= fr'{proj_folder}\{cf}\output\wetlands\ponds.tif' #file structure change 06-09-21
+    pond_path= f'{proj_folder}/{cf}/output/wetlands/ponds.gpkg' #file structure change 06-09-21
+    pond_ras_path= f'{proj_folder}/{cf}/output/wetlands/ponds.tif' #file structure change 06-09-21
 
-    nontidal_path = fr'{proj_folder}\{cf}\output\wetlands\nontidal_wetlands.gpkg' #file structure change 06-09-21
-    nontidal_ras_path = fr'{proj_folder}\{cf}\output\wetlands\nontidal_wetlands.tif' #file structure change 06-09-21
+    nontidal_path = f'{proj_folder}/{cf}/output/wetlands/nontidal_wetlands.gpkg' #file structure change 06-09-21
+    nontidal_ras_path = f'{proj_folder}/{cf}/output/wetlands/nontidal_wetlands.tif' #file structure change 06-09-21
 
-    tidal_path= fr'{proj_folder}\{cf}\output\wetlands\nwi_tidal_overlay.gpkg' #file structure change 06-09-21
-    tidal_ras_path= fr'{proj_folder}\{cf}\output\wetlands\nwi_tidal_overlay.tif' #file structure change 06-09-21
+    tidal_path= f'{proj_folder}/{cf}/output/wetlands/nwi_tidal_overlay.gpkg' #file structure change 06-09-21
+    tidal_ras_path= f'{proj_folder}/{cf}/output/wetlands/nwi_tidal_overlay.tif' #file structure change 06-09-21
 
-    slr_clip = fr'{proj_folder}\{cf}\output\wetlands\slr_clip.tif' #file structure change 06-09-21
-    tidal_composite_path =fr'{proj_folder}\{cf}\output\wetlands\tidal_composite.tif' #file structure change 06-09-21
+    slr_clip = f'{proj_folder}/{cf}/output/wetlands/slr_clip.tif' #file structure change 06-09-21
+    tidal_composite_path =f'{proj_folder}/{cf}/output/wetlands/tidal_composite.tif' #file structure change 06-09-21
 
-    lu_path = fr'{proj_folder}\{cf}\output\data.gpkg'
-    lu_ras_path = fr'{proj_folder}\{cf}\output\lu_ras.tif'
+    lu_path = f'{proj_folder}/{cf}/output/data.gpkg'
+    lu_ras_path = f'{proj_folder}/{cf}/output/lu_ras.tif'
 
-    out_burnin_path = fr'{proj_folder}\{cf}\output\{cf}_burnin.tif'
-    out_lu_burnin_path = fr'{proj_folder}\{cf}\output\{cf}_lu_2017_2018.tif'
+    out_burnin_path = f'{proj_folder}/{cf}/output/{cf}_burnin.tif'
+    out_lu_burnin_path = f'{proj_folder}/{cf}/output/{cf}_lu_2017_2018.tif'
     
 
     print("\n*********************************************")
@@ -119,15 +117,14 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     #prep wetlands, whether nontidal or tidal
     gdf=gpd.read_file(tidal_lookup)
 
-    # if cf in tidal_lookup[tidal]=0:
-    if int(gdf.loc[gdf['cf'] == cf]['tidal']) ==0:
-        print(cf, " is a nontidal county. running nontidal prep only")
+    if int(gdf.loc[gdf['cf'] == cf]['tidal']) == 0:
+        print(cf, " is a nontidal county. Running nontidal prep only")
         prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
         etime(proj_folder, cf, "Nontidal Wetlands rasterized", st)
         st = time.time()
         
     else:
-        print(cf, " is a tidal county. running nontidal and tidal prep")
+        print(cf, " is a tidal county. Running nontidal and tidal prep")
         prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
         etime(proj_folder, cf, "Nontidal Wetlands rasterized", st)
         st = time.time()
@@ -160,7 +157,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
     for key in clip_dict:
         in_clip=clip_dict[key][0]
-        out_clip= fr'{proj_folder}\{cf}\output\{cf}_{key}_clip.tif'
+        out_clip= fr'{proj_folder}/{cf}/output/{cf}_{key}_clip.tif'
         clip_dict[key].append(out_clip)
         dtype= (clip_dict[key][1])
         
@@ -257,7 +254,7 @@ def prepTCT(lc_path, tc_path, proj_folder, cf, field_name):
     layer_list = ['tct', 'tct_bufs', 'toa'] #, 'tct', 'tct_bufs', 'toa']
     for layer in layer_list:
         vec_ds = gpd.read_file(fn_vec, layer=layer)
-        out_ras = fr'{proj_folder}\{cf}\output\{layer}.tif'
+        out_ras = fr'{proj_folder}/{cf}/output/{layer}.tif'
         print(out_ras)
 
         rst = rasterio.open(fn_ras)
@@ -285,9 +282,9 @@ def prepTCT(lc_path, tc_path, proj_folder, cf, field_name):
 def createTCComposite(proj_folder, cf, tc_composite_path):
     #make single tc raster
 
-    tct_in = fr'{proj_folder}\{cf}\output\tct.tif'
-    toa_in= fr'{proj_folder}\{cf}\output\toa.tif'
-    tct_bufs = fr'{proj_folder}\{cf}\output\tct_bufs.tif'
+    tct_in = fr'{proj_folder}/{cf}/output/tct.tif'
+    toa_in= fr'{proj_folder}/{cf}/output/toa.tif'
+    tct_bufs = fr'{proj_folder}/{cf}/output/tct_bufs.tif'
     out_burnin= tc_composite_path
 
     with rasterio.open(tct_in, 'r') as tct_src:

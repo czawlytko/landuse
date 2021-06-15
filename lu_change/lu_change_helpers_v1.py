@@ -387,7 +387,7 @@ def getContextChange(val):
             'else'         :         get_lu_code('Natural Succession Scrub/Shrub', False)   
         },
         'Scrub\Shrub to Low Vegetation' : {
-            'Wetland - Tidal'           : get_lu_code('Tidal Scrub/Shrub', False),
+            'Wetland - Tidal'           : get_lu_code('Tidal Wetlands Scrub/Shrub', False),
             'Wetland - Floodplain'      : get_lu_code('Floodplain Scrub/Shrub', False),
             'Wetland - Other'           : get_lu_code('Terrene/Isolated Wetlands Scrub/Shrub', False),
             'AG - crop'    :                        get_lu_code('Orchard/Vineyard Scrub/Shrub', False),      
@@ -687,7 +687,7 @@ def run_zonal_stats(args):
                 vals = tabArea(src, geoms[s], noData, rasVals)
                 if vals[0] != -1:
                     sumDict[keys[s]] = vals
-    return sumDict 
+    return sumDict
          
 def tabArea(src, geom, noData, rasVals):
     """

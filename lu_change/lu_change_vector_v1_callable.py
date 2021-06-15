@@ -53,20 +53,21 @@ sys.path.insert(0,'..')
 from lu_change import lu_change_helpers_v1 as lch
 from lu_change import readXML as xml 
 from lu_change import LU_Change_P6Rollup as p6_change
+# from helpers import etime 
+import helpers
+import luconfig
 
-from helpers import etime 
-
-# def etime(folder, cf, note, starttime):
-#     # print text and elapsed time in HMS or Seconds if time < 60 sec
-#     elapsed =  time.time()-starttime
-#     f = open(f"{folder}/{cf}/luchange_log.txt", "a")
-#     if elapsed > 60:
-#         f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
-#         print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
-#     else:
-#         f.write(f'{cf}--{note} runtime - {round(elapsed,2)} sec\n\n')
-#         print(f'{cf}--{note} runtime - {round(elapsed,2)} sec')
-#     f.close()
+def etime(folder, cf, note, starttime):
+    # print text and elapsed time in HMS or Seconds if time < 60 sec
+    elapsed =  time.time()-starttime
+    f = open(f"{folder}/{cf}/luchange_log.txt", "a")
+    if elapsed > 60:
+        f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
+        print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
+    else:
+        f.write(f'{cf}--{note} runtime - {round(elapsed,2)} sec\n\n')
+        print(f'{cf}--{note} runtime - {round(elapsed,2)} sec')
+    f.close()
 
 def runDirect(lc_change_gdf):
     """
@@ -315,7 +316,9 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     # tab area for all natural PSID LCs touching any change left
     use_T2_LU_zones = list(set(list(joined_table['zone']))) 
     shapes = {row['SID']:row['geometry'] for idx, row in psegs[psegs['SID'].isin(list(joined_table['SID']))].iterrows()}
-    lu_list_vals = list(lch.get_lu_code('ALL', False).values())
+    
+    lu_list_vals = list(set(list(lch.get_lu_code('ALL', False).values())))
+
     lu_list_vals_str = [str(x) for x in lu_list_vals]
     lu2017df = lch.zonal_stats_mp(shapes, '', lu_2017_ras_path, lu_list_vals, ['SID']+lu_list_vals_str, True, False)
     lu2017df = lu2017df.merge(joined_table, on='SID', how='left')
@@ -324,7 +327,7 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     wetlands += [str(x) for x in lch.getWetlandTypes('Floodplain')]
     wetlands += [str(x) for x in lch.getWetlandTypes('Other')]
     lu2017df.loc[:, 'wetlands'] = lu2017df[wetlands].sum(axis=1)
-    lu2017df[str(lch.get_lu_code('Forest Forest', False))] = lu2017df[str(lch.get_lu_code('Forest Forest', False))] +  lu2017df['wetlands']#add wetlands total to forest
+    lu2017df[str(lch.get_lu_code('Forest Forest', False))] = lu2017df[str(lch.get_lu_code('Forest Forest', False))] + lu2017df['wetlands']#add wetlands total to forest
     wetlands.append('wetlands')
     lu2017df.drop(wetlands, axis=1, inplace=True)
     lu2017df = lu2017df[(lu2017df['Class_name'] == lu2017df['T1LC'])] # remove records where LC types don't match
@@ -441,248 +444,251 @@ def run_lu_change(cf, lu_type):
         newyear = '2018' 
     uppercf = cf.upper()
 
-    try: # if a county fails don't disrupt other counties
-        folder = luconfig.folder
-        anci_folder = luconfig.anci_folder
+    # try: # if a county fails don't disrupt other counties
+    folder = luconfig.folder
+    anci_folder = luconfig.anci_folder
 
-        project_folder = f"{folder}\{cf}\LandUseChange"
-        main_path = os.path.abspath(f"{folder}/{cf}")
-        lu_chg_path = os.path.join(main_path, 'LandUseChange')
-        input_path = os.path.join(lu_chg_path, 'input')
-        output_path = os.path.join(lu_chg_path, 'output')
+    main_path = os.path.abspath(f"{folder}/{cf}")
+    input_path = os.path.join(main_path, 'input')
+    output_path = os.path.join(main_path, 'output')
+    temp_path = os.path.join(main_path, 'temp')
 
-        # define paths
+    # define paths
+    # files = os.listdir(input_path)
+    # pattern = f"{cf}_landcoverchange_????_????_*.tif"
+    # for entry in files:
+    #     if fnmatch.fnmatch(entry, pattern):
+    #         print(f"Found landcover file: {entry}")
+    #         lc_change_ras_path = f'{input_path}/{entry}'
+    #         break
+    # if not os.path.exists(lc_change_ras_path):
+    #     print(f"Failed to open LC: {lc_change_ras_path}" )
+    #     exit()
 
-        files = os.listdir(f'{input_path}/{cf}/input')
-        pattern = f"{cf}_landcoverchange_????_????_*.tif"
-        for entry in files:
-            if fnmatch.fnmatch(entry, pattern):
-                print(f"Found landcover file: {entry}")
-                lc_change_ras_path = f'{folder}/{cf}/input/{entry}'
-                break
-        if not arcpy.Exists(lc_change_ras_path):
-            print(f"Failed to open LC: {lc_change_ras_path}" )
-            exit()
+    lc_change_ras_path = helpers.rasFinder(input_path, f"{cf}_landcoverchange_????_????_*.tif")
 
-        # lc_change_ras_path = os.path.join(input_path, f"{cf}_landcoverchange_{oldyear}_{newyear}_June2021.tif")
-        lu_2017_ras_path = os.path.join(main_path, 'output', f"{cf}_lu_2017_2018.tif") #udpated
-        psegs_gpkg_path = os.path.join(main_path, 'output', 'data.gpkg')
-        trees_over_gpkg_path = os.path.join(main_path, 'output', 'trees_over.gpkg')
-        parcels_path = os.path.join(main_path, 'temp', 'temp_dataprep.gdb') 
-        raster_parcels_path = os.path.join(main_path, 'temp', 'parcels.tif') # is this what this will be called?
-        nlcd11_path = os.path.join(anci_folder, 'NLCD', 'nlcd_2011_10m.tif')
-        lcmap_11_19_path = os.path.join(anci_folder, 'lcmap', '10m_PreDev','Primary_2y_2011_2019_projected.tif')
-        cdl13_path = os.path.join(anci_folder, 'CDL', '2013_10m_cdls_arc.tif')
+    # lc_change_ras_path = os.path.join(input_path, f"{cf}_landcoverchange_{oldyear}_{newyear}_June2021.tif")
+    lu_2017_ras_path = os.path.join(main_path, 'output', f"{cf}_lu_2017_2018.tif") #updated
+    psegs_gpkg_path = os.path.join(main_path, 'output', 'data.gpkg')
+    trees_over_gpkg_path = os.path.join(main_path, 'output', 'trees_over.gpkg')
+    parcels_path = os.path.join(main_path, 'temp', 'temp_dataprep.gdb') 
 
-        # get county boundary poly
-        cnty_boundary = lch.getCntyBoundary(anci_folder, cf)
-        etime(folder, cf, 'Opened county boundary polygon', st_time)
-        st = time.time()
+    # raster_parcels_path = os.path.join(main_path, 'temp', 'parcels_rasterized.tif') # is this what this will be called?
+    raster_parcels_path = helpers.rasFinder(temp_path, "*parcels*.tif")
 
-        # read in rasters - clipped to county boundary
-        lc_change_ary, lc_change_meta = lch.clipRasByCounty(cnty_boundary, lc_change_ras_path)
-        etime(folder, cf, 'Opened LC Change Raster', st)
-        st = time.time()
+    nlcd11_path = os.path.join(anci_folder, 'NLCD', 'nlcd_2011_10m.tif')
+    lcmap_11_19_path = os.path.join(anci_folder, 'lcmap', '10m_PreDev','Primary_2y_2011_2019_projected.tif')
 
-        # make no data 0 for change raster
-        lc_change_ary = np.where(lc_change_ary == 255, 0, lc_change_ary)
-        lc_change_ary = np.where(lc_change_ary <= 12, 0, lc_change_ary)
-        etime(folder, cf, 'Reclassed LC Change to Change Only', st)
-        st = time.time()
+    cdl13_path = os.path.join(anci_folder, 'CDL', '2013_10m_cdls_arc.tif')
 
-        # Vectorize change raster
-        lc_change_gdf = lch.vectorizeRaster(lc_change_ary, lc_change_meta['transform'])
-        etime(folder, cf, 'Vectorized Change', st)
-        
-        # Read in vector parcels
-        parcels_gdf = gpd.read_file(parcels_path, layer='parcels_vectorized')
-        parcels_gdf = parcels_gdf[['PID', 'geometry']]
-        parcels_gdf['PID'] = parcels_gdf.PID.astype(int)
-        etime(folder, cf, 'Read in parcels', st)
-        st = time.time()
+    # get county boundary poly
+    cnty_boundary = lch.getCntyBoundary(anci_folder, cf)
+    etime(folder, cf, 'Opened county boundary polygon', st_time)
+    st = time.time()
 
-        # select parcels with change in them
-        chg_seg_dict = {row['zone']:row['geometry'] for idx, row in lc_change_gdf.iterrows()}
-        pars_change_table = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', raster_parcels_path, [], ['zone', 'PID'], False, False)
-        pars_change_table['PID'] = pars_change_table.PID.astype(int)
-        etime(folder, cf, 'Selected parcels intersecting change', st)
-        st = time.time()
+    # read in rasters - clipped to county boundary
+    lc_change_ary, lc_change_meta = lch.clipRasByCounty(cnty_boundary, lc_change_ras_path)
+    etime(folder, cf, 'Opened LC Change Raster', st)
+    st = time.time()
 
-        # Create dict of PIDs and geometries
-        parcel_dict = {row['PID']:row['geometry'] for idx, row in parcels_gdf.iterrows()}
+    # make no data 0 for change raster
+    lc_change_ary = np.where(lc_change_ary == 255, 0, lc_change_ary)
+    lc_change_ary = np.where(lc_change_ary <= 12, 0, lc_change_ary)
+    etime(folder, cf, 'Reclassed LC Change to Change Only', st)
+    st = time.time()
 
-        # Run zonal stats
-        # tabulate area for ag classes by parcel for NLCD 11
-        nlcd_ag_classes = [lch.getNLCD(81), lch.getNLCD(82)] # 81 pasture, 82 crop
-        nlcd11df = lch.zonal_stats_mp(parcel_dict, '', nlcd11_path, [81,82], ['PID', 'NLCD11_pas', 'NLCD11_crop'], False, False)
-        etime(folder, cf, 'Ran zonal stats majority on NLCD11', st)
-        st = time.time()
-        lcmap10df = lch.zonal_stats_mp(parcel_dict, 'MAJ', lcmap_11_19_path, list(lch.getLCMAP('ALL')), ['PID', 'LCMAPmaj'], False, False)
-        etime(folder, cf, 'Ran zonal stats majority on LCMAP', st)
-        st = time.time()
-        cdl_dict = lch.getCDL('ALL')
-        cdl_cols = [cdl_dict[c] for c in cdl_dict if c != 0]
-        cdldf = lch.zonal_stats_mp(parcel_dict, '', cdl13_path, list(cdl_dict.keys()), ['PID']+cdl_cols, False, False)
-        etime(folder, cf, 'Ran tabulate area on CDL13', st)
-        st = time.time()
-        cdldf = cdldf[['PID'] + cdl_cols[0:4]]
-        lu2017df = lch.zonal_stats_mp(parcel_dict, 'MAJ', lu_2017_ras_path, [], ['PID', 'ParT2LUmaj'], True, False)
-        etime(folder, cf, 'Ran zonal stats majority on T2 LU', st)
-        st = time.time()
+    # Vectorize change raster
+    lc_change_gdf = lch.vectorizeRaster(lc_change_ary, lc_change_meta['transform'])
+    etime(folder, cf, 'Vectorized Change', st)
+    
+    # Read in vector parcels
+    parcels_gdf = gpd.read_file(parcels_path, layer='parcels_vectorized')
+    parcels_gdf = parcels_gdf[['PID', 'geometry']]
+    parcels_gdf['PID'] = parcels_gdf.PID.astype(int)
+    etime(folder, cf, 'Read in parcels', st)
+    st = time.time()
 
-        # Merge zonal stats dfs on PID to create tab_area_df
-        tab_area_df = nlcd11df.copy()
-        tab_area_df = tab_area_df.merge(lcmap10df, on=['PID'])
-        tab_area_df = tab_area_df.merge(cdldf, on=['PID'])
-        tab_area_df = tab_area_df.merge(lu2017df, on=['PID'])
-        parcels_gdf.loc[:, 'pid_area'] = parcels_gdf.geometry.area
-        tab_area_df = tab_area_df.merge(parcels_gdf[['PID', 'pid_area']], on='PID')
+    # select parcels with change in them
+    chg_seg_dict = {row['zone']:row['geometry'] for idx, row in lc_change_gdf.iterrows()}
+    pars_change_table = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', raster_parcels_path, [], ['zone', 'PID'], False, False)
+    pars_change_table['PID'] = pars_change_table.PID.astype(int)
+    etime(folder, cf, 'Selected parcels intersecting change', st)
+    st = time.time()
 
-        # delete individual zonal stats df
-        del nlcd11df
-        # del nlcd16df
-        del lcmap10df
-        del cdldf
-        del lu2017df
+    # Create dict of PIDs and geometries
+    parcel_dict = {row['PID']:row['geometry'] for idx, row in parcels_gdf.iterrows()}
 
-        # Create table with PID and TYPE columns, where TYPE is turf, crop or pasture
-        tab_area_df = lch.getAgAndTurf(tab_area_df)
-        etime(folder, cf, 'Summarized anci to find crop, pas and turf parcels', st)
-        st = time.time()
+    # Run zonal stats
+    # tabulate area for ag classes by parcel for NLCD 11
+    nlcd_ag_classes = [lch.getNLCD(81), lch.getNLCD(82)] # 81 pasture, 82 crop
+    nlcd11df = lch.zonal_stats_mp(parcel_dict, '', nlcd11_path, [81,82], ['PID', 'NLCD11_pas', 'NLCD11_crop'], False, False)
+    etime(folder, cf, 'Ran zonal stats majority on NLCD11', st)
+    st = time.time()
+    lcmap10df = lch.zonal_stats_mp(parcel_dict, 'MAJ', lcmap_11_19_path, list(lch.getLCMAP('ALL')), ['PID', 'LCMAPmaj'], False, False)
+    etime(folder, cf, 'Ran zonal stats majority on LCMAP', st)
+    st = time.time()
+    cdl_dict = lch.getCDL('ALL')
+    cdl_cols = [cdl_dict[c] for c in cdl_dict if c != 0]
+    cdldf = lch.zonal_stats_mp(parcel_dict, '', cdl13_path, list(cdl_dict.keys()), ['PID']+cdl_cols, False, False)
+    etime(folder, cf, 'Ran tabulate area on CDL13', st)
+    st = time.time()
+    cdldf = cdldf[['PID'] + cdl_cols[0:4]]
+    lu2017df = lch.zonal_stats_mp(parcel_dict, 'MAJ', lu_2017_ras_path, [], ['PID', 'ParT2LUmaj'], True, False)
+    etime(folder, cf, 'Ran zonal stats majority on T2 LU', st)
+    st = time.time()
 
-        # Merge tab area data with vectorized change segments
-        lc_change_gdf = lc_change_gdf.merge(pars_change_table, on='zone', how='left') # ADD PID column to change segments
-        lc_change_gdf = lc_change_gdf.merge(tab_area_df, on='PID', how='left') # add TYPE field to change segments
-        del pars_change_table
+    # Merge zonal stats dfs on PID to create tab_area_df
+    tab_area_df = nlcd11df.copy()
+    tab_area_df = tab_area_df.merge(lcmap10df, on=['PID'])
+    tab_area_df = tab_area_df.merge(cdldf, on=['PID'])
+    tab_area_df = tab_area_df.merge(lu2017df, on=['PID'])
+    parcels_gdf.loc[:, 'pid_area'] = parcels_gdf.geometry.area
+    tab_area_df = tab_area_df.merge(parcels_gdf[['PID', 'pid_area']], on='PID')
 
-        # Read change raster xml - convert to dict
-        change_df = xml.buildChangeData(lc_change_ras_path+'.xml')
-        change_df = xml.defineReclassValues(change_df) #Value is LC Change and NewVal is T1 LC
-        lc_change_dict = {}
-        for idx, row in change_df.iterrows():
-            lc_change_dict[row['Description']] = row['Value']
+    # delete individual zonal stats df
+    del nlcd11df
+    # del nlcd16df
+    del lcmap10df
+    del cdldf
+    del lu2017df
 
-        # Tag change raster with majority LC change class and majority T2 LU class
-        chg_tab = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', lc_change_ras_path, list(lc_change_dict.values()), ['zone', 'LC_Chg_Val'], False, True)
-        for i in list(set(list(chg_tab['LC_Chg_Val']))):
-            if i > 0:
-                chg_tab.loc[chg_tab['LC_Chg_Val'] == i, 'LC Change'] = list(change_df[change_df['Value'] == i]['Description'])[0]
-        etime(folder, cf, 'Ran zonal stats majority on LC change - change segs', st)
-        st = time.time()
-        
-        lu_tab = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', lu_2017_ras_path, list(lch.get_lu_code('ALL', False).values()), ['zone', 'T2_LU_Val'], True, False)
-        for i in list(set(list(lu_tab['T2_LU_Val']))):
-            lu_tab.loc[lu_tab['T2_LU_Val'] == i, 'T2 LU'] = lch.get_lu_code(i, True)
-        del chg_seg_dict
-        etime(folder, cf, 'Ran zonal stats majority on T2 LU - change segs', st)
-        st = time.time()
+    # Create table with PID and TYPE columns, where TYPE is turf, crop or pasture
+    tab_area_df = lch.getAgAndTurf(tab_area_df)
+    etime(folder, cf, 'Summarized anci to find crop, pas and turf parcels', st)
+    st = time.time()
 
-        # Add LC change class and T2 LU class to segments gdf
-        lc_change_gdf = lc_change_gdf.merge(chg_tab, on='zone')
-        lc_change_gdf = lc_change_gdf.merge(lu_tab, on='zone')
-        change_df = change_df.rename(columns={'Description':'LC_Change', 'Value':'LC_Chg_Val'})
-        change_df = change_df[['LC_Change', 'LC_Chg_Val']]
-        lc_change_gdf = lc_change_gdf.merge(change_df, on='LC_Chg_Val') #add LC change description
+    # Merge tab area data with vectorized change segments
+    lc_change_gdf = lc_change_gdf.merge(pars_change_table, on='zone', how='left') # ADD PID column to change segments
+    lc_change_gdf = lc_change_gdf.merge(tab_area_df, on='PID', how='left') # add TYPE field to change segments
+    del pars_change_table
 
-        all_t2 = set(list(lc_change_gdf['T2_LU_Val']))
-        if -1 in all_t2:
-            print('T2_LU_Val contained -1 - other error')
+    # Read change raster xml - convert to dict
+    change_df = xml.buildChangeData(lc_change_ras_path+'.xml')
+    change_df = xml.defineReclassValues(change_df) #Value is LC Change and NewVal is T1 LC
+    lc_change_dict = {}
+    for idx, row in change_df.iterrows():
+        lc_change_dict[row['Description']] = row['Value']
 
-        etime(folder, cf, 'Total Data Prep', st_time)
-        st = time.time()
+    # Tag change raster with majority LC change class and majority T2 LU class
+    chg_tab = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', lc_change_ras_path, list(lc_change_dict.values()), ['zone', 'LC_Chg_Val'], False, True)
+    for i in list(set(list(chg_tab['LC_Chg_Val']))):
+        if i > 0:
+            chg_tab.loc[chg_tab['LC_Chg_Val'] == i, 'LC Change'] = list(change_df[change_df['Value'] == i]['Description'])[0]
+    etime(folder, cf, 'Ran zonal stats majority on LC change - change segs', st)
+    st = time.time()
+    
+    lu_tab = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', lu_2017_ras_path, list(lch.get_lu_code('ALL', False).values()), ['zone', 'T2_LU_Val'], True, False)
+    for i in list(set(list(lu_tab['T2_LU_Val']))):
+        lu_tab.loc[lu_tab['T2_LU_Val'] == i, 'T2 LU'] = lch.get_lu_code(i, True)
+    del chg_seg_dict
+    etime(folder, cf, 'Ran zonal stats majority on T2 LU - change segs', st)
+    st = time.time()
 
-        # Add T1 LU code field - intialized at 0
-        lc_change_gdf.loc[:, 'T1_LU_Code'] = 0
+    # Add LC change class and T2 LU class to segments gdf
+    lc_change_gdf = lc_change_gdf.merge(chg_tab, on='zone')
+    lc_change_gdf = lc_change_gdf.merge(lu_tab, on='zone')
+    change_df = change_df.rename(columns={'Description':'LC_Change', 'Value':'LC_Chg_Val'})
+    change_df = change_df[['LC_Change', 'LC_Chg_Val']]
+    lc_change_gdf = lc_change_gdf.merge(change_df, on='LC_Chg_Val') #add LC change description
 
-        # Run direct method
-        lc_change_gdf = runDirect(lc_change_gdf)
-        etime(folder, cf, 'Ran direct approach', st)
-        st = time.time()
-        
-        # Run new structure method
-        tct_gdf = gpd.read_file(trees_over_gpkg_path, layer='tct_bufs')
-        lc_change_gdf = runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_dict, tab_area_df, lu_2017_ras_path, tct_gdf, raster_parcels_path)
-        etime(folder, cf, 'Ran new structure approach', st)
-        st = time.time()
+    all_t2 = set(list(lc_change_gdf['T2_LU_Val']))
+    if -1 in all_t2:
+        print('T2_LU_Val contained -1 - other error')
 
-        # Run context based method
-        lc_change_gdf = runContextBase(lc_change_gdf)
-        etime(folder, cf, 'Ran context based approach', st)
-        st = time.time()
+    etime(folder, cf, 'Total Data Prep', st_time)
+    st = time.time()
 
-        # Read in psegs for indirect method
-        psegs = gpd.read_file(psegs_gpkg_path, layer='psegs_lu')
-        psegs = psegs[['SID', 'PSID', 'Class_name', 'lu','geometry']]
-        etime(folder, cf, 'Read psegs', st)
-        st = time.time()
+    # Add T1 LU code field - intialized at 0
+    lc_change_gdf.loc[:, 'T1_LU_Code'] = 0
 
-        # Run indirect method
-        tct_gdf = gpd.read_file(trees_over_gpkg_path, layer='tct')
-        lc_change_gdf = runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, tct_gdf)
-        del tct_gdf
-        etime(folder, cf, 'Ran Indirect', st)
-        st = time.time()
+    # Run direct method
+    lc_change_gdf = runDirect(lc_change_gdf)
+    etime(folder, cf, 'Ran direct approach', st)
+    st = time.time()
+    
+    # Run new structure method
+    tct_gdf = gpd.read_file(trees_over_gpkg_path, layer='tct_bufs')
+    lc_change_gdf = runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_dict, tab_area_df, lu_2017_ras_path, tct_gdf, raster_parcels_path)
+    etime(folder, cf, 'Ran new structure approach', st)
+    st = time.time()
 
-        # Create LU Change code 
-        try:
-            lc_change_gdf['T1_LU_Code'] = lc_change_gdf.T1_LU_Code.astype(int)
-        except:
-            print("Could not convert T1_LU_Code to int ")
-            t1_codes = list(set(list(lc_change_gdf['T1_LU_Code'])))
-            bad_codes = []
-            for code in t1_codes:
-                if lch.get_lu_code(code, True) == 'Null':
-                    bad_codes.append(code)
-            # print(bad_codes)
-            lc_change_gdf[(lc_change_gdf['T1_LU_Code'].isin(bad_codes))|(lc_change_gdf['T1_LU_Code'].isna())].to_csv(os.path.join(output_path, f"{cf}_bad_t1_code_{lu_type}.csv"), index=False)
+    # Run context based method
+    lc_change_gdf = runContextBase(lc_change_gdf)
+    etime(folder, cf, 'Ran context based approach', st)
+    st = time.time()
 
-        for i in list(set(list(lc_change_gdf['T1_LU_Code']))):
-            lc_change_gdf.loc[lc_change_gdf['T1_LU_Code'] == i, 'T1_LU'] = lch.get_lu_code(i, True)
+    # Read in psegs for indirect method
+    psegs = gpd.read_file(psegs_gpkg_path, layer='psegs_lu')
+    psegs = psegs[['SID', 'PSID', 'Class_name', 'lu','geometry']]
+    etime(folder, cf, 'Read psegs', st)
+    st = time.time()
 
-        lc_change_gdf['Acres'] = lc_change_gdf.geometry.area 
-        lc_change_gdf['Acres'] = lc_change_gdf['Acres'] / 4047 #m2 to acres
-        lc_change_gdf = lc_change_gdf[['zone', 'T1_LU_Code', 'T1_LU', 'T2 LU', 'LC_Change', 'Method', 'TYPE', 'Type_log', 'GRP_TYPE', 'LC_Chg_Val', 'PID', 'Acres', 'geometry']]
-        lc_change_gdf.to_file(os.path.join(output_path, f"{cf}_LU_change_{lu_type}.shp"))
+    # Run indirect method
+    tct_gdf = gpd.read_file(trees_over_gpkg_path, layer='tct')
+    lc_change_gdf = runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, tct_gdf)
+    del tct_gdf
+    etime(folder, cf, 'Ran Indirect', st)
+    st = time.time()
 
-        if 0 in list(lc_change_gdf['T1_LU_Code']) or -1 in list(lc_change_gdf['T1_LU_Code']):
-            print("\n***********************************************************************************")
-            print("Missing T1 LU for ", len(lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])]), " segments")
-            print("Check ", os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"))
-            print("***********************************************************************************\n")
-            lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])].to_csv(os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"), index=False)
+    # Create LU Change code 
+    try:
+        lc_change_gdf['T1_LU_Code'] = lc_change_gdf.T1_LU_Code.astype(int)
+    except:
+        print("Could not convert T1_LU_Code to int ")
+        t1_codes = list(set(list(lc_change_gdf['T1_LU_Code'])))
+        bad_codes = []
+        for code in t1_codes:
+            if lch.get_lu_code(code, True) == 'Null':
+                bad_codes.append(code)
+        # print(bad_codes)
+        lc_change_gdf[(lc_change_gdf['T1_LU_Code'].isin(bad_codes))|(lc_change_gdf['T1_LU_Code'].isna())].to_csv(os.path.join(output_path, f"{cf}_bad_t1_code_{lu_type}.csv"), index=False)
 
-        etime(folder, cf, 'Write vector LU change', st)
-        st = time.time()
+    for i in list(set(list(lc_change_gdf['T1_LU_Code']))):
+        lc_change_gdf.loc[lc_change_gdf['T1_LU_Code'] == i, 'T1_LU'] = lch.get_lu_code(i, True)
 
-        # Rasterize T1 LU and mask by LC change
-        classes_not_in_change = ['Tree Canopy to Tree Canopy', 'Tree Canopy to Tree Canopy NS']
-        shapes = [ (row['geometry'], row['T1_LU_Code']) for idx, row in lc_change_gdf[(lc_change_gdf['Method'] == 'New Structure - Parcel')|(lc_change_gdf['LC_Change'].isin(classes_not_in_change))].iterrows()]
-        sh = (lc_change_ary.shape[1], lc_change_ary.shape[2])
-        t1lu_ary = rasterize(shapes, out_shape=sh, fill=0,  transform=lc_change_meta['transform'], all_touched=False)
-        shapes = [ (row['geometry'], row['T1_LU_Code']) for idx, row in lc_change_gdf[lc_change_gdf['Method'] != 'New Structure - Parcel'].iterrows()]
-        ns_p_ary = rasterize(shapes, out_shape=sh, fill=0,  transform=lc_change_meta['transform'], all_touched=False)
-        t1lu_ary = np.where(lc_change_ary > 0, ns_p_ary, t1lu_ary)
-        del lc_change_ary
-        del ns_p_ary
-        lc_change_meta.update({'nodata':0,
-                                'dtype':'uint16'})
-        with rio.open(os.path.join(output_path, f"{cf}_T1_LU_{lu_type}.tif"), 'w', **lc_change_meta, compress="LZW") as dataset:
-            dataset.write(t1lu_ary)
+    lc_change_gdf['Acres'] = lc_change_gdf.geometry.area 
+    lc_change_gdf['Acres'] = lc_change_gdf['Acres'] / 4047 #m2 to acres
+    lc_change_gdf = lc_change_gdf[['zone', 'T1_LU_Code', 'T1_LU', 'T2 LU', 'LC_Change', 'Method', 'TYPE', 'Type_log', 'GRP_TYPE', 'LC_Chg_Val', 'PID', 'Acres', 'geometry']]
+    lc_change_gdf.to_file(os.path.join(temp_path, f"{cf}_LU_change_{lu_type}.shp"))
 
-        etime(folder, cf, 'Rasterize T1 LU and wrote to TIFF', st)
-        st = time.time()
+    if 0 in list(lc_change_gdf['T1_LU_Code']) or -1 in list(lc_change_gdf['T1_LU_Code']):
+        print("\n***********************************************************************************")
+        print("Missing T1 LU for ", len(lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])]), " segments")
+        print("Check ", os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"))
+        print("***********************************************************************************\n")
+        lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])].to_csv(os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"), index=False)
 
-        # Create P6 LU Change
-        p6_change.run_p6_rollup_change(cf, lu_type, anci_folder, output_path) 
-        etime(folder, cf, 'Create Raster LU Change for P6 Classes and Pivot Table', st)
+    etime(folder, cf, 'Write vector LU change', st)
+    st = time.time()
 
-        etime(folder, cf, 'Total LU Change Time', st_time)
-        st = time.time()
+    # Rasterize T1 LU and mask by LC change
+    classes_not_in_change = ['Tree Canopy to Tree Canopy', 'Tree Canopy to Tree Canopy NS']
+    shapes = [ (row['geometry'], row['T1_LU_Code']) for idx, row in lc_change_gdf[(lc_change_gdf['Method'] == 'New Structure - Parcel')|(lc_change_gdf['LC_Change'].isin(classes_not_in_change))].iterrows()]
+    sh = (lc_change_ary.shape[1], lc_change_ary.shape[2])
+    t1lu_ary = rasterize(shapes, out_shape=sh, fill=0,  transform=lc_change_meta['transform'], all_touched=False)
+    shapes = [ (row['geometry'], row['T1_LU_Code']) for idx, row in lc_change_gdf[lc_change_gdf['Method'] != 'New Structure - Parcel'].iterrows()]
+    ns_p_ary = rasterize(shapes, out_shape=sh, fill=0,  transform=lc_change_meta['transform'], all_touched=False)
+    t1lu_ary = np.where(lc_change_ary > 0, ns_p_ary, t1lu_ary)
+    del lc_change_ary
+    del ns_p_ary
+    lc_change_meta.update({'nodata':0,
+                            'dtype':'uint16'})
+    with rio.open(os.path.join(temp_path, f"{cf}_T1_LU_{lu_type}.tif"), 'w', **lc_change_meta, compress="LZW") as dataset:
+        dataset.write(t1lu_ary)
 
-        return 0
+    etime(folder, cf, 'Rasterize T1 LU and wrote to TIFF', st)
+    st = time.time()
+    # Create P6 LU Change
+    p6_change.run_p6_rollup_change(cf, lu_type) 
+    etime(folder, cf, 'Create Raster LU Change for P6 Classes and Pivot Table', st)
 
-    except Exception as e:
-        etime(folder, cf, f"main exception \n{e}", st)
-        print("********* ", cf, " FAILED **********\n\n")
-        return -1
+    etime(folder, cf, 'Total LU Change Time', st_time)
+
+
+    return 0
+
+    # except Exception as e:
+    #     etime(folder, cf, f"main exception \n{e}", st_time)
+    #     print("********* ", cf, " FAILED **********\n\n")
+    #     return -1
 

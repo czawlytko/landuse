@@ -21,6 +21,7 @@ from helpers import etime
 import helpers
 import landuse_rev2 as landuse
 import tc.TC_LU_Submodule_v1 as trees_over
+from tc.createTiles_v1 import createTiles
 import burn_in
 import lu_change.lu_change_vector_v1_callable as lu_change_module
 
@@ -68,15 +69,11 @@ if __name__ == "__main__":
         print('--Main.py Test:', test, type(test))
         print("--batch_size: ", batch_size)
 
-        run_dp = False
         add_data = True # join TA tables to psegs
-        run_lu = True
-        run_tc = True
-        run_bi = True
-        run_change = False
-
-        # if not dp_outs.exist() and run_dp:
-        #     prep.RUN(folder, cf)
+        run_lu = False
+        run_tc = False
+        run_bi = False
+        run_change = True
 
         if run_lu:
             helpers.county_check(cf) # check ancillary data and fips and...
@@ -85,6 +82,15 @@ if __name__ == "__main__":
             print('Did not run lu')
 
         if run_tc:
+            if not os.path.isfile(f'{luconfig.folder}/{cf}/temp/{cf}_tiles.shp'):
+                print("Creating tiles...")
+                try:
+                    createTiles(cf, psegs)
+                except:
+                    psegs = gpd.read_file(f'{luconfig.folder}/{cf}/output/data.gpkg', layer='psegs_lu')
+                    createTiles(cf, psegs)
+                del psegs # maybe remove?
+
             tc_flag = trees_over.run_trees_over_submodule(luconfig.TC_CPUS, cf)
             if tc_flag == 0:
                 print("Trees over Submodule complete")
@@ -92,7 +98,6 @@ if __name__ == "__main__":
                 print("Trees over Submodule incomplete; Check log for error")
             else:
                 print("Trees over Submodule flag invalid value: ", tc_flag)
-                print("Check for trees_over.gpkg manually")
         else:
             print("Did not run_tc")
 
@@ -104,9 +109,8 @@ if __name__ == "__main__":
                 print("Burn in Submodule incomplete; Check log for error")
             else:
                 print("Burn in Submodule flag invalid value: ", burnin_flag)
-                print("Check for lu intermediates manually")
         else:
-            print('did not run rasterization and burn-in')
+            print('Did not run burn_in')
 
         if run_change:
             lu_type = 'v1' # extension added to file names to distinguish versions of data

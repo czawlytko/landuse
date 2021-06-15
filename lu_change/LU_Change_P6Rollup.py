@@ -23,7 +23,6 @@ import luconfig
 def etime(cf, note, starttime):
     # print text and elapsed time in HMS or Seconds if time < 60 sec
     elapsed =  time.time()-starttime
-    # f = open(f"{mainPath}/T1T2LUChange_log.txt", "a")
     if elapsed > 60:
         # f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
         print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
@@ -350,7 +349,7 @@ def createTable(vals, counts):
     df = df[list(getRollUp3Letters('ALL').values())+['Loss']]
     return df
 
-def run_p6_rollup_change(cf, lu_type, anci_path, mainPath):
+def run_p6_rollup_change(cf, lu_type):
     """
     Method: run_p6_rollup_change()
     Purpose: Call functions to roll up T1 and T2 LU rasters to P6 classes,
@@ -358,16 +357,18 @@ def run_p6_rollup_change(cf, lu_type, anci_path, mainPath):
              write summary pivot table.
     Params: cf - first 4 letters of county + fips code
             lu_type - extension of naming scheme used in T1 LU raster
-            anci_path - path to ancillary folder
+            anci_folder - path to ancillary folder
             mainPath - path to folder containing T1 LU and destination to write results
     Returns: N/A
     """
+    anci_folder = luconfig.anci_folder
+    folder = luconfig.folder
     startTime = time.time()
     # define paths
-    rollUpPath = os.path.join(anci_path, 'P6RollUpLUCrosswalk.csv')
-    rollUp2Path = os.path.join(anci_path, 'p6lu_change_all_classes.csv')
-    t1_path = os.path.join(mainPath, f"{cf}_T1_LU_{lu_type}.tif")
-    t2_path = f"B:/priority/{cf}/output/{cf}_burn_lu.tif"
+    rollUpPath = os.path.join(anci_folder, 'P6RollUpLUCrosswalk.csv')
+    rollUp2Path = os.path.join(anci_folder, 'p6lu_change_all_classes.csv')
+    t1_path = f"{folder}/{cf}/temp/{cf}_T1_LU_{lu_type}.tif"
+    t2_path = f'{folder}/{cf}/output/{cf}_lu_2017_2018.tif'
     # Create dataframe relating LU classes to their Roll up class
     rollUpDf = pd.read_csv(rollUpPath)
     etime(cf, 'Read roll up DF', startTime)
@@ -406,14 +407,14 @@ def run_p6_rollup_change(cf, lu_type, anci_path, mainPath):
     counts = list(counts)
 
     # # Write out LU change
-    outras_path = os.path.join(mainPath, f"{cf}_P6LU_Change_{lu_type}.tif")
+    outras_path = f"{folder}/{cf}/output/{cf}_P6LU_Change_{lu_type}.tif"
     createPrimaryRaster(outras_path, rollUpDf2, vals, counts, lu_change_ary, t2_meta)
     etime(cf, 'Wrote LU Change Raster', st)
     st = time.time()
 
     # Create table of summarized change
     summary_df = createTable(vals, counts)
-    summary_df.to_csv(os.path.join(mainPath, f"{cf}_P6LU_Change_{lu_type}_summary.csv"), index=True)
+    summary_df.to_csv(f"{folder}/{cf}/output/{cf}_P6LU_Change_{lu_type}_summary.csv", index=True)
     etime(cf, 'Create and wrote tabular summary', st)
     st = time.time()
 

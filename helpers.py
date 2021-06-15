@@ -30,6 +30,8 @@ def etime(cf, psegs, note, starttime):
         print(f'--{note} runtime - {round(elapsed, 2)} sec\n')
     f.close()
 
+
+
 def tformat(elapsed_t):
     if elapsed_t > 60:
         print(f'{time.strftime("%H:%M:%S", time.gmtime(elapsed_t))}')
@@ -252,7 +254,19 @@ def joinData(cf, psegs, remove_columns):
 
     return psegs
 
+def rasFinder(dir, pattern):
+    files = os.listdir(dir)
+    for entry in files:
+        if fnmatch.fnmatch(entry, pattern):
+            print(f"Found raster: {entry}")
+            foundRas = f'{dir}/{entry}'
+            break
 
+    if not os.path.exists(foundRas):
+        print(f"ERROR! Failed to open foundRas: {foundRas}\n--dir: {dir}\n--pattern: {pattern}" )
+        exit()
+
+    return foundRas
 
 
 
