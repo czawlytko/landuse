@@ -73,7 +73,7 @@ if __name__ == "__main__":
         # LAND USE
         if not os.path.isfile(f'{luconfig.folder}/{cf}/output/data.gpkg'):
             helpers.county_check(cf) # check ancillary data and fips and...
-            lu_flag, psegs = landuse.RUN(cf, True, test) 
+            lu_flag, psegs = landuse.RUN(cf, test) 
             if lu_flag != 0:
                 print("Land Use failed. See logs.")
                 sys.exit()
