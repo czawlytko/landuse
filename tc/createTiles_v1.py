@@ -21,7 +21,7 @@ def createTiles(cf, psegs):
     """
     counties = f'{config.anci_folder}/census/BayCounties20m_project.shp'
     test_gpkg = f'{config.folder}/{cf}/output/data.gpkg'
-    grid_p = f'{config.folder}/{cf}/temp/{cf}_tiles.shp'
+    grid_p = f'{config.folder}/{cf}/temp/tc_tiles.shp'
 
     if len(psegs) <= config.TC_Tile_Max+50000: # if whole county is small - only need 1 tile covering county
         minx, miny, maxx, maxy = psegs.total_bounds

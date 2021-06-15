@@ -10,31 +10,41 @@ import geopandas as gpd
 
 import luconfig
 
-def etime(cf, psegs, note, starttime):
+def etime(batch, note, starttime):
+    # batch arg can either be "batch" as a string or cf
     folder = luconfig.folder
-
-    # print text and elapsed time in HMS or Seconds if time < 60 sec
     elapsed = time.time()-starttime
-    log_dir = Path(f"{folder}/{cf}") # define as pathlib path object, allows pathlib's exists()
-    etime_file = Path(log_dir, "etlog.txt")
-
-    # if 'lu' in psegs.columns:  # etime() is used before lu exists
-    #     print(f"----{round((len(psegs[(psegs.lu.notna())]))/len(psegs)*100, 2)}% lu classified")
+    scriptName = os.path.basename(sys.argv[0])
+    if scriptName.lower() == "main.py":
+        etime_file = Path(folder, "batch_log.txt")
+    else:
+        # batch = cf 
+        etime_file = Path(folder, batch, "log.txt")
 
     f = open(etime_file, "a")
-    if elapsed > 60:
-        f.write(f'--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n')
-        print(f'--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n')
-    else:
-        f.write(f'--{note} runtime - {round(elapsed, 2)} sec\n')
-        print(f'--{note} runtime - {round(elapsed, 2)} sec\n')
+    f.write(f'--{note} runtime - {tformat(elapsed)}\n')
+    print(f'--{note} runtime - {tformat(elapsed)}\n')
     f.close()
 
 
+def lu_etime(cf, psegs, note, starttime):
+    folder = luconfig.folder
+    # print text and elapsed time in HMS or Seconds if time < 60 sec
+    elapsed = time.time()-starttime
+    log_dir = Path(f"{folder}/{cf}") # define as pathlib path object, allows pathlib's exists()
+    etime_file = Path(log_dir, "et_log.txt")
+
+    if 'lu' in psegs.columns:  # etime() is used before lu exists
+        note = note + f"\n----{round((len(psegs[(psegs.lu.notna())]))/len(psegs)*100, 2)}% lu classified"
+    f = open(etime_file, "a")
+    f.write(f'--{note} runtime - {tformat(elapsed)}\n')
+    print(f'--{note} runtime - {tformat(elapsed)}\n')
+    f.close()
+  
 
 def tformat(elapsed_t):
     if elapsed_t > 60:
-        print(f'{time.strftime("%H:%M:%S", time.gmtime(elapsed_t))}')
+        return(f'{time.strftime("%H:%M:%S", time.gmtime(elapsed_t))}')
     else:
         return f"{round(elapsed_t, 2)} seconds"
 
@@ -89,80 +99,29 @@ def joinData(cf, psegs, remove_columns):
     jd_st = time.time()
 
     folder = luconfig.folder
-    LUZ_values = luconfig.LUZ_values
-    if remove_columns:
-        print('removing columns')
-        # subset to only required columns
-        psegs = psegs[['PSID', 'PID', 'SID', 'Class_name', 'geometry']]
+    TA_dict = generate_TA_dict(cf)
 
-    lc_pid = {
-        'path': f"{folder}/{cf}/temp/lc_pid_ta.dbf",
-        'zone': 'PID'
-    }
-
-    c1719_sid = {
-        'path': f"{folder}/{cf}/temp/c1719_sid_ta.dbf",
-        'zone': 'SID'
-    }
-
-    c18_sid = {
-        'path': f"{folder}/{cf}/temp/c18_sid_ta.dbf",
-        'zone': 'SID'
-    }
-
-    c18_pid = {
-        'path': f"{folder}/{cf}/temp/c18_pid_ta.dbf",
-        'zone': 'PID'
-    }
-
-    n16_sid = {
-        'path': f"{folder}/{cf}/temp/n16_sid_ta.dbf",
-        'zone': 'SID'
-    }
-    
-    n16_pid = {
-    'path': f"{folder}/{cf}/temp/n16_pid_ta.dbf",
-    'zone': 'PID'
-    }
-
-    luz_sid = {
-        'path': f"{folder}/{cf}/temp/luz_sid_ta.dbf",
-        'zone': 'SID'
-    }
-
-    luz_pid = {
-        'path': f"{folder}/{cf}/temp/luz_pid_ta.dbf",
-        'zone': 'PID'
+    s_area = {
+        'name' : "segment area",
+        'tabPath' : f'{folder}/{cf}/temp/segtable.dbf',
+        'zone' : 'SID',
     }
 
     p_area = {
-        'path': f"{folder}/{cf}/temp/parcelstable.dbf",
-        'zone': 'PID'
+        'name' : "parcel area",
+        'tabPath' : f'{folder}/{cf}/temp/parcelstable.dbf',
+        'zone' : 'PID',
     }
 
-    s_area = {
-        'path': f"{folder}/{cf}/temp/segtable.dbf",
-        'zone': 'SID'
-    }
-
-    # list of rasters and the zone units
-    dict_dict = {
-        'p_area': p_area,
-        's_area': s_area,
-        'luz_pid': luz_pid,
-        'luz_sid': luz_sid,
-        'lc_pid': lc_pid,
-        'c1719_sid': c1719_sid,
-        'c18_sid': c18_sid,
-        'c18_pid': c18_pid,
-        'n16_sid': n16_sid,
-        # 'n16_pid': n16_pid
-    }
+    TA_dict["s_area"] = s_area
+    TA_dict["p_area"] = p_area
 
     new_cols = []
     missing_TA = []
-    for dname, tadict in dict_dict.items():
-        tabPath = tadict['path']
+
+
+    for dname, tadict in TA_dict.items():
+        tabPath = tadict['tabPath']
         if not os.path.isfile(tabPath):
             missing_TA.append(tabPath)
             print(f"TA MISSING FILE: {tabPath}")
@@ -171,9 +130,9 @@ def joinData(cf, psegs, remove_columns):
 
         sys.exit()
 
-    for dname, tadict in dict_dict.items():
+    for dname, tadict in TA_dict.items():
         merge_st = time.time()
-        tabPath = tadict['path']
+        tabPath = tadict['tabPath']
         zoneAbv = tadict['zone'][0].lower()
         data_source = dname.split('_')[0]
         zoneID = tadict['zone']
@@ -198,7 +157,7 @@ def joinData(cf, psegs, remove_columns):
 
                 vcols = []  # to build list of included and accepted value columns
                 for col in tabledf.columns:
-                    if col in LUZ_values:
+                    if col in luconfig.LUZ_values:
                         vcols.append(col)
 
                 # Get max LUZ value
@@ -250,7 +209,7 @@ def joinData(cf, psegs, remove_columns):
     except:
         print(psegs.dtypes)
 
-    etime(cf, psegs, "joinData()", jd_st)
+    etime(cf, "joinData()", jd_st)
 
     return psegs
 
@@ -268,5 +227,90 @@ def rasFinder(dir, pattern):
 
     return foundRas
 
+def generate_TA_dict(cf):
 
+    anci_folder = luconfig.anci_folder
+    folder = luconfig.folder
+        
+    lc_path = rasFinder(f"{folder}/{cf}/input", f"{cf}_landcover_*.tif")
+    lc_pid = {
+        'name' : "landcover",
+        'colname' : 'p_lc_',
+        'path': lc_path,
+        'tabPath' : f'{folder}/{cf}/temp/lc_pid_ta.dbf',
+        'zone' : 'PID',
+        'vals' : [1,2,3,4,5,6,7,8,9,10,11,12]
+        }
 
+    c1719_sid = {
+        'name' : "CDL 2017-2019",
+        'colname' : 's_c18_',
+        'path': f'{anci_folder}/CDL/CDL_2017_2019_4class_maj_1m.tif',
+        'tabPath' : f'{folder}/{cf}/temp/c1719_sid_ta.dbf',
+        'zone': 'SID',
+        'vals' : [0,1,2,3,4]
+        }
+    c18_sid = {
+        'name' : "CDL 2018",
+        'colname' : 's_c18_',
+        'path': f'{anci_folder}/CDL/cdl_2018_4class_maj_1m.tif',
+        'tabPath' : f'{folder}/{cf}/temp/c18_sid_ta.dbf',
+        'zone': 'SID',
+        'vals' : [0,1,2,3,4]
+        }
+    c18_pid = {
+        'name' : "CDL 2018",
+        'colname' : 'p_c18_',
+        'path': f'{anci_folder}/CDL/cdl_2018_4class_maj_1m.tif',
+        'tabPath' : f'{folder}/{cf}/temp/c18_pid_ta.dbf',
+        'zone': 'PID',
+        'vals' : [0,1,2,3,4]
+        }
+    n16_sid = {
+        'name' : "NLCD",
+        'colname' : 's_n16_',
+        'path': f'{anci_folder}/NLCD/NLCD_2016_pashay_maj_1m.tif',
+        'tabPath' : f'{folder}/{cf}/temp/n16_sid_ta.dbf',
+        'zone': 'SID',
+        'vals' : [0,1]
+        }
+    n16_pid = {
+        'name' : "NLCD",
+        'colname' : 'p_n16_',
+        'path': f'{anci_folder}/NLCD/NLCD_2016_pashay_maj_1m.tif',
+        'tabPath' : f'{folder}/{cf}/temp/n16_pid_ta.dbf',
+        'zone': 'PID',
+        'vals' : [0,1]
+        }
+    luz_sid = {
+        'name' : "Local Use or Zoning",
+        'colname' : 's_luz',
+        'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
+        'tabPath' : f'{folder}/{cf}/temp/luz_sid_ta.dbf',
+        'zone': 'SID',
+        'vals' : luconfig.LUZ_values
+        }
+    luz_pid = {
+        'name' : "Local Use or Zoning",
+        'colname' : 'p_luz',
+        'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
+        'tabPath' : f'{folder}/{cf}/temp/luz_pid_ta.dbf',
+        'zone': 'PID',
+        'vals' : luconfig.LUZ_values
+        }
+
+    # list of rasters and the zone units
+    TA_dict = {
+        # 'p_area': p_area,
+        # 's_area': s_area,
+        'luz_pid': luz_pid,
+        'luz_sid': luz_sid,
+        'lc_pid': lc_pid,
+        'c1719_sid': c1719_sid,
+        'c18_sid': c18_sid,
+        'c18_pid': c18_pid,
+        'n16_sid': n16_sid,
+        # 'n16_pid': n16_pid
+    }
+
+    return TA_dict

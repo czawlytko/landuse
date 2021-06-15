@@ -17,7 +17,7 @@ from pathlib import Path
 import argparse
 
 import luconfig
-from helpers import etime
+from helpers import lu_etime as etime
 from helpers import joinData
 
 
@@ -860,7 +860,7 @@ def RUN(cf, add_data, test):
     else:
         print('--landuse.RUN() Test: ', test)
         psegsPath = f"{folder}/{cf}/input/data.gpkg" # output will swap 'input' to 'output' and layer 'psegs_lu'
-        inLayer = 'psegs_joined'
+        inLayer = 'psegs'
         outPath = psegsPath.replace('input','output')
         outLayer = 'psegs_lu'
 
@@ -891,8 +891,21 @@ def RUN(cf, add_data, test):
         for layername in fiona.listlayers(psegsPath):
             with fiona.open(psegsPath, layer=layername) as src:
                 print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
+        return -1, 'psegs failed to read'
+        sys.exit()
 
     if add_data:
+        reqcolumns = ['SID', 'PID', 'Class_name', 'PSID', 'p_area', 's_area', 'ps_area',
+        'p_lc_1', 'p_lc_2', 'p_lc_3', 'p_lc_4', 'p_lc_5', 'p_lc_6', 'p_lc_7', 'p_lc_8', 'p_lc_9', 'p_lc_10', 'p_lc_11', 'p_lc_12',
+        's_c18_0', 's_c18_1', 's_c18_2', 's_c18_3', 's_c18_4',
+        'p_c18_0', 'p_c18_1', 'p_c18_2', 'p_c18_3', 'p_c18_4',
+        's_c1719_0', 's_c1719_1', 's_c1719_2', 's_c1719_3', 's_c1719_4',
+        's_n16_0', 's_n16_1', 
+        'p_luz','s_luz',
+        'logic', 'lu', 'geometry']
+
+        print('Deleting fields. Joining new data.')
+        psegs = psegs[['PSID', 'PID', 'SID', 'Class_name', 'geometry']]
         psegs = joinData(cf, psegs, True) # replace remove_columns bool with column check 
 
     psegs = datacheck(cf, psegs, folder)
@@ -1051,9 +1064,8 @@ def RUN(cf, add_data, test):
 
     # All remaining lv segs with suspended succession if there is no known parcel area (probably roads or public lands)
     print("REVISE 'p_area = 0' logic when new data prep is ready") # replace with road tabulations
-    psegs.loc[(psegs.lu.isna()) & (psegs.p_area == 0) & (psegs.Class_name.isin(['Low Vegetation'])), 'logic'] = "p_area = 0"
-    psegs.loc[(psegs.lu.isna()) & (psegs.p_area == 0) & (psegs.Class_name.isin(['Low Vegetation'])), 'lu'] = "Suspended Succession Herbaceous"
-
+    psegs.loc[(psegs.lu.isna()) & (psegs.p_area == 0) & (psegs.Class_name.isin(['Low Vegetation', 'Scrub\\Shrub'])), 'logic'] = "p_area = 0"
+    psegs.loc[(psegs.lu.isna()) & (psegs.p_area == 0) & (psegs.Class_name.isin(['Low Vegetation', 'Scrub\\Shrub'])), 'lu'] = "Suspended Succession Herbaceous"
 
     # if na or pasture in <5 parcel WITH NO build, make nat sus
     psegs.loc[(psegs.lu.str.contains("Pasture")) & (psegs.p_lc_7 == 0) & (psegs.p_area < (4046*5)) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub'])), 'logic'] = "Reclass Pas to Nat <5ac p"
@@ -1137,7 +1149,12 @@ def RUN(cf, add_data, test):
     wt = time.time()
     psegs.to_file(outPath, layer=outLayer, driver='GPKG')
     etime(cf, psegs,  f"Output write", wt)
-       
-    return psegs
+    
+    flag = 0
+    return flag, psegs
+        
+    # except:
+    #     flag = -1
+    #     return flag, psegs
 
 

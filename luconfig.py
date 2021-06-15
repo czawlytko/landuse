@@ -1,5 +1,5 @@
 anci_folder = r"B:/ancillary"
-folder = f'B:/landuse/version1/old'
+folder = f'B:/landuse/version1'
 # folder = f'B:/landuse/rev1/batch_test'
 batch_size = 10000 # used in landuse_rev2 and TC_LU_Submodule_v1
 batch_log_Path = f"{folder}/batch_log.txt"
@@ -24,6 +24,7 @@ anci_dict = {
     'sucAgeRasPath' : r'lcmap/10m_timbHarv/Sucess_Age_10m.tif', # lcmp succession age
 }
 
+
 dp_file_list = [
         f"psegs.gpkg",
         f"segments.gpkg",
@@ -34,7 +35,6 @@ dp_file_list = [
         f"ps_parcels.tif"]
 
 LUZ_values = ['AG_GEN', 'BAR', 'CAFO', 'CATT', 'CENT', 'CONS', 'CROP', 'DEC', 'EVE', 'EXT', 'FALL', 'NAT', 'OV', 'PAS', 'POUL', 'SUS', 'TG', 'TIM', 'WAT', 'WET', 'WET_NT', 'WET_T', 'no_luz']
-
 
 lu_code_dict = {
     'Emergent Wetlands' : 5000, # was 2

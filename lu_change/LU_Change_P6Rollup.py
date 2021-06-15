@@ -268,7 +268,7 @@ def createRAT(band, df, vals, counts):
     rat.CreateColumn("Red", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
     rat.CreateColumn("Green", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
     rat.CreateColumn("Blue", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
-    rat.CreateColumn("P6LU_Chg", gdalconst.GFT_String, gdalconst.GFU_Name)
+    rat.CreateColumn("Change", gdalconst.GFT_String, gdalconst.GFU_Name)
 
     # populate the columns
     ct = 0
@@ -289,18 +289,18 @@ def createRAT(band, df, vals, counts):
         13: (2, 58, 189), # WAT - deep sky blue,
     }
     for idx, row in df.iterrows():
-        if row['P6LU_Chg'] in vals:
-            # print(ct, int(row['P6LU_Chg']), 1, row['Change'])
-            rat.SetValueAsInt(ct, 0, int(row['P6LU_Chg']))
-            rat.SetValueAsInt(ct, 1, int(counts[vals.index(row['P6LU_Chg'])]))
-            t2_val = int(str(row['P6LU_Chg'])[-2:])
+        if row['Change'] in vals:
+            # print(ct, int(row['Change']), 1, row['Change'])
+            rat.SetValueAsInt(ct, 0, int(row['Change']))
+            rat.SetValueAsInt(ct, 1, int(counts[vals.index(row['Change'])]))
+            t2_val = int(str(row['Change'])[-2:])
             rgb_tup = rgb_dict[t2_val]
             rat.SetValueAsInt(ct, 2, int(rgb_tup[0]))
             rat.SetValueAsInt(ct, 3, int(rgb_tup[1]))
             rat.SetValueAsInt(ct, 4, int(rgb_tup[2]))
             rat.SetValueAsString(ct, 5, row['Change'])
             ct += 1
-        
+
     # set the default Raster Attribute Table for src_ds band 1 to the newly modified rat
     band.SetDefaultRAT(rat)
     return band

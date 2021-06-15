@@ -32,6 +32,7 @@ import pandas as pd
 from osgeo import gdal, osr, gdalconst
 from scipy.ndimage import label
 
+from helpers import etime
 #####################################################################################
 #------------------------------- MAIN ------------- --------------------------------#
 #####################################################################################
@@ -42,17 +43,16 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
              calls all functions needs to do the final lu burn in. If this function fails,
              the exception is caught and it will not kill the lu model run.
     Parms: cf - the county fips string; first four letters of the county name, underscore, county fips
-    Returns: Flag for if module ran properlyy;
+    Returns: Flag for if module ran properly;
                 0 - module ran and created final burn in lu with symbology and RAT applied and pyramids built.
                 -1 - exception was thrown and data may not have been created
     """
-    #run a check to ensure trees_over.gpkg exists?
+    # run a check to ensure trees_over.gpkg exists?
 
     tidal_lookup = f'{anci_folder}/wetlands/tidal_lookup.csv'
     slr_ras = f'{anci_folder}/SLR_1.tif'
     symb_table= f'{anci_folder}/land_use_color_table_20210503.csv'
     county_shp = f'{anci_folder}/census/BayCounties20m_project.shp'
-
 
     ##########build file paths############
     rail_path= f'{anci_folder}/rail/rail_baywide.tif'
@@ -67,17 +67,17 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     
     tc_composite_path= f'{proj_folder}/{cf}/output/tc_composite.tif'
 
-    pond_path= f'{proj_folder}/{cf}/output/wetlands/ponds.gpkg' #file structure change 06-09-21
-    pond_ras_path= f'{proj_folder}/{cf}/output/wetlands/ponds.tif' #file structure change 06-09-21
+    pond_path= f'{proj_folder}/{cf}/input/wetlands/ponds.gpkg' #file structure change 06-09-21
+    pond_ras_path= f'{proj_folder}/{cf}/input/wetlands/ponds.tif' #file structure change 06-09-21
 
-    nontidal_path = f'{proj_folder}/{cf}/output/wetlands/nontidal_wetlands.gpkg' #file structure change 06-09-21
-    nontidal_ras_path = f'{proj_folder}/{cf}/output/wetlands/nontidal_wetlands.tif' #file structure change 06-09-21
+    nontidal_path = f'{proj_folder}/{cf}/input/wetlands/nontidal_wetlands.gpkg' #file structure change 06-09-21
+    nontidal_ras_path = f'{proj_folder}/{cf}/input/wetlands/nontidal_wetlands.tif' #file structure change 06-09-21
 
-    tidal_path= f'{proj_folder}/{cf}/output/wetlands/nwi_tidal_overlay.gpkg' #file structure change 06-09-21
-    tidal_ras_path= f'{proj_folder}/{cf}/output/wetlands/nwi_tidal_overlay.tif' #file structure change 06-09-21
+    tidal_path= f'{proj_folder}/{cf}/input/wetlands/nwi_tidal_overlay.gpkg' #file structure change 06-09-21
+    tidal_ras_path= f'{proj_folder}/{cf}/input/wetlands/nwi_tidal_overlay.tif' #file structure change 06-09-21
 
-    slr_clip = f'{proj_folder}/{cf}/output/wetlands/slr_clip.tif' #file structure change 06-09-21
-    tidal_composite_path =f'{proj_folder}/{cf}/output/wetlands/tidal_composite.tif' #file structure change 06-09-21
+    slr_clip = f'{proj_folder}/{cf}/input/wetlands/slr_clip.tif' #file structure change 06-09-21
+    tidal_composite_path =f'{proj_folder}/{cf}/input/wetlands/tidal_composite.tif' #file structure change 06-09-21
 
     lu_path = f'{proj_folder}/{cf}/output/data.gpkg'
     lu_ras_path = f'{proj_folder}/{cf}/output/lu_ras.tif'
@@ -86,9 +86,9 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     out_lu_burnin_path = f'{proj_folder}/{cf}/output/{cf}_lu_2017_2018.tif'
     
 
-    print("\n*********************************************")
-    print("********* STARTING ", cf, " *************")
-    print("*********************************************\n")
+    print("\n*******************************")
+    print(  "********* BURN IN *************")
+    print(  "*******************************\n")
 
     ###############do stuff###############
 
@@ -97,21 +97,21 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
     #mask land cover to correct extent using 20m buffered county polygon
     clipRasByGeom(county_shp, cf, og_lc_path, lc_path)
-    etime(proj_folder, cf, "LC masked by county boundary", start)
+    etime(cf, "LC masked by county boundary", start)
     st = time.time()
 
     #prep tct
     prepTCT(lc_path, tc_path, proj_folder, cf, 'lu_code')
-    etime(proj_folder, cf, "TCT layers rasterized", st)
+    etime(cf, "TCT layers rasterized", st)
     st = time.time()
 
     createTCComposite(proj_folder, cf, tc_composite_path)
-    etime(proj_folder, cf, "TC composite created", st)
+    etime(cf, "TC composite created", st)
     st = time.time()
 
     #prep ponds
     prepPonds(lc_path, pond_path, pond_ras_path, 'pond')
-    etime(proj_folder, cf, "Ponds rasterized", st)
+    etime(cf, "Ponds rasterized", st)
     st = time.time()
 
     #prep wetlands, whether nontidal or tidal
@@ -120,26 +120,26 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     if int(gdf.loc[gdf['cf'] == cf]['tidal']) == 0:
         print(cf, " is a nontidal county. Running nontidal prep only")
         prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
-        etime(proj_folder, cf, "Nontidal Wetlands rasterized", st)
+        etime(cf, "Nontidal Wetlands rasterized", st)
         st = time.time()
         
     else:
         print(cf, " is a tidal county. Running nontidal and tidal prep")
         prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
-        etime(proj_folder, cf, "Nontidal Wetlands rasterized", st)
+        etime(cf, "Nontidal Wetlands rasterized", st)
         st = time.time()
 
         prepTidalWetlands(lc_path, tidal_path, tidal_ras_path, 'w_type_code')
-        etime(proj_folder, cf, "Tidal Wetlands rasterized", st)
+        etime(cf, "Tidal Wetlands rasterized", st)
         st = time.time()
 
         createTidalComposite(tidal_ras_path, slr_ras, slr_clip, tidal_composite_path)
-        etime(proj_folder, cf, "Tidal Wetlands composite raster created", st)
+        etime(cf, "Tidal Wetlands composite raster created", st)
         st = time.time()
 
     # rasterize LU
     rasterizeLU(lc_path, lu_path, lu_ras_path, 'lu_code')
-    etime(proj_folder, cf, "Land use rasterized", st)
+    etime(cf, "Land use rasterized", st)
     st = time.time()
 
     # run burn ins
@@ -163,7 +163,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         
         clip_to_lu(lu_ras_path, key, in_clip, out_clip, dtype)
 
-    etime(proj_folder, cf, "Clips done", st)
+    etime(cf, "Clips done", st)
     st = time.time()
 
     #make burn raster
@@ -186,20 +186,20 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
         reclassBurnInValueTidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, tidal_clip, pond_clip)
 
-    etime(proj_folder, cf, "Reclass burn done", st)
+    etime(cf, "Reclass burn done", st)
     st = time.time()
 
 
     #create final burn in array and pass to add symbology function to write
     dst_array, burnin_meta= reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_lu_burnin_path, lc_clip)
-    etime(proj_folder, cf, "Burn in done", st)
+    etime(cf, "Burn in done", st)
     st = time.time()
 
     #fix forest pixels
     tmp = reclassVals(dst_array) # call this function
     dst_array = np.where(tmp > 0, tmp, dst_array) # update your burn in array
     del tmp
-    etime(proj_folder, cf, "Fix forest pixels done", st)
+    etime(cf, "Fix forest pixels done", st)
     st = time.time()
 
     
@@ -210,7 +210,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
     #create Pyramids on final output raster
     createPyramids(out_lu_burnin_path)
-    etime(proj_folder, cf, "Pyramids built, symbology and attribute table added", st)
+    etime(cf, "Pyramids built, symbology and attribute table added", st)
     st = time.time()
 
 
@@ -232,12 +232,12 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         os.remove(pond_clip)
     
 
-    etime(proj_folder, cf, "Total Run ", start)
+    etime(cf, "Total Run ", start)
     return 0
 
     # except Exception as e: 
     #     print(e)
-    #     etime(proj_folder, cf, f"main exception \n{e}", st)
+    #     etime(cf, f"main exception \n{e}", st)
     #     print("********* ", cf, " FAILED **********\n\n")
     #     return -1
 
@@ -254,7 +254,7 @@ def prepTCT(lc_path, tc_path, proj_folder, cf, field_name):
     layer_list = ['tct', 'tct_bufs', 'toa'] #, 'tct', 'tct_bufs', 'toa']
     for layer in layer_list:
         vec_ds = gpd.read_file(fn_vec, layer=layer)
-        out_ras = fr'{proj_folder}/{cf}/output/{layer}.tif'
+        out_ras = f'{proj_folder}/{cf}/output/{layer}.tif'
         print(out_ras)
 
         rst = rasterio.open(fn_ras)
@@ -557,7 +557,7 @@ def clip_to_lu(lu_ras_path, key, in_ras, out_ras, dtype):
                 with rasterio.open(out_ras, 'w', **clip_meta) as dst:
                     dst.write(clip)
                     dst.close()
-        print("clip done: ", key)
+        print("Clip Complete: ", key)
 
 def reclassComputeTidal(lc_array, rail_array, wetlands_array, lu_array, tc_array, tidal_array, pond_array):
 
@@ -753,17 +753,7 @@ def reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_lu_burnin_path, lc_cl
 #########################################################################################
 ####################################HELPERS##############################################
 #########################################################################################
-def etime(proj_folder, cf, note, starttime):
-    # print text and elapsed time in HMS or Seconds if time < 60 sec
-    elapsed = time.time()-starttime
-    f = open(f"{proj_folder}/{cf}/etime_burnin_log.txt", "a")
-    if elapsed > 60:
-        f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
-        print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
-    else:
-        f.write(f'{cf}--{note} runtime - {round(elapsed,2)} sec\n\n')
-        print(f'{cf}--{note} runtime - {round(elapsed,2)} sec')
-    f.close()
+
 
 def getFeatures(gdf):
     """Function to parse features from GeoDataFrame in such a manner that rasterio wants them"""

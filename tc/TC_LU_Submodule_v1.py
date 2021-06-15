@@ -73,16 +73,16 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     psegsPath = f"{folder}/{cf}/output/data.gpkg"
     parcels_gpkg = f"{folder}/{cf}/temp/temp_dataprep.gdb"
     out_gpkg = f"{folder}/{cf}/output/trees_over.gpkg" 
-    tiles_shp = f"{folder}/{cf}/temp/tc_tile_buff.shp" # f"{folder}/{cf}/temp/{cf}_manual_dissolve.shp"
-
+    tiles_shp = f"{folder}/{cf}/temp/tc_tiles.shp" 
+    
     #location of temp files needed for QGIS workflows will be written - can delete these after
     qgis_temp_files_path = Path(folder,cf,"temp_qgis_files")
     if not os.path.exists(qgis_temp_files_path):
         os.makedirs(qgis_temp_files_path)
 
-    print("\n*********************************************")
-    print("********* STARTING ", cf, " *************")
-    print("*********************************************\n")
+    print("\n***********************************")
+    print(  "********* TREE CANOPY *************")
+    print(  "***********************************\n")
 
 
     # try: #if a county fails - don't kill thread
@@ -100,14 +100,14 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     chunk_iterator = []
     for idx, row in tiles.iterrows():
         psegs = env_pkg.readPolysMask(psegsPath, psegsLayer, row['geometry'].envelope) # read in psegs layer
-        note = "Read psegs gpkg for tile " + str(row['Id'])
+        note = "Read psegs gpkg for tile " + str(row['id'])
         etime(cf, note, st)
         st = time.time()
         crs = psegs.crs
 
         psegs = psegs[['PID', 'PSID', 'Class_name', 'lu', 'geometry']] #remove columns I don't need for workflow
         psegs = psegs.explode()
-        note = str(row['Id']) + ' tile has ' + str(len(psegs)) + ' psegs'
+        note = str(row['id']) + ' tile has ' + str(len(psegs)) + ' psegs'
         etime(cf, note, st)
         st = time.time()
 
@@ -146,7 +146,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
         allTurf = [x for x in allLUS if x != None and 'turf' in x.lower()]
 
         #get list of data needed for each tile
-        chunk_iterator.append( (psegs, allAg, allTurf, row['Id'], cf, NUM_CPUS) )
+        chunk_iterator.append( (psegs, allAg, allTurf, row['id'], cf, NUM_CPUS) )
 
     #pull processors
     print("\n")
@@ -206,7 +206,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     # deleteTempFiles(cf)
     # etime(cf, "Deleted temp folder", st)
 
-    etime(cf, "Total Run ", start)
+    etime(cf, "Tree Canopy Model - run_trees_over_submodule()", start)
     return 0
 
     # except Exception as e: 
