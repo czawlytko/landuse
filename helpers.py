@@ -55,7 +55,7 @@ def checkFile(fPath): # used for all anci data
     else:
         pass
 
-def county_check(cf,):
+def county_check(cf):
     
     for k,v in luconfig.anci_dict.items():
         checkFile(Path(luconfig.anci_folder, v))

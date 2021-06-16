@@ -37,8 +37,11 @@ dp_file_list = [
 LUZ_values = ['AG_GEN', 'BAR', 'CAFO', 'CATT', 'CENT', 'CONS', 'CROP', 'DEC', 'EVE', 'EXT', 'FALL', 'NAT', 'OV', 'PAS', 'POUL', 'SUS', 'TG', 'TIM', 'WAT', 'WET', 'WET_NT', 'WET_T', 'no_luz']
 
 lu_code_dict = {
-    'Emergent Wetlands' : 5000, # was 2
-    'Tree Canopy' : 3100,  # was 3
+    'Roads' : 2110,
+    'Buildings' : 2120, 
+    'Emergent Wetlands' : 5000,
+    'Tree Canopy' : 3100, 
+    'Other Impervious' : 2130,
     'Other Impervious Surface' : 2130, # "Surfaces" vs "Surface"
     'Other Impervious Surfaces' : 2130,
     'Water':1000,
@@ -50,9 +53,6 @@ lu_code_dict = {
     'Open Ditch' : 1221,
     'Tree Canopy over Ditch' : 1222,
     'Culverted/Buried Ditch' : 1223,
-    'Roads' : 2110, #rev1
-    'Buildings' : 2120, 
-    'Other Impervious' : 2130,
     'Tree Canopy over Roads' : 2141,
     'Tree Canopy over Structures' : 2142,
     'Tree Canopy over Other Impervious' : 2143,

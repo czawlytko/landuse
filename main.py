@@ -65,6 +65,8 @@ if __name__ == "__main__":
 
     intro(cflist)
 
+    etime("batch", f"Start Batch: {cflist}", time.time())
+
     for cf in cflist: # replace with args/CLI after testing
         print('--Main.py Test:', test, type(test))
         print("--batch_size: ", batch_size)
