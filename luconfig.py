@@ -3,6 +3,8 @@ folder = f'B:/landuse/version1'
 # folder = f'B:/landuse/rev1/batch_test'
 batch_size = 10000 # used in landuse_rev2 and TC_LU_Submodule_v1
 batch_log_Path = f"{folder}/batch_log.txt"
+rollUpPath = r'C:/scripts/landuse/lu_change/P6RollUpLUCrosswalk.csv' 
+rollUp2Path = r'C:/scripts/landuse/lu_change/p6lu_change_all_classes.csv'
 
 TC_Tile_Min = 150000 # thresholds for minimum number of psegs required to generate tiles
 TC_Tile_Max = 500000

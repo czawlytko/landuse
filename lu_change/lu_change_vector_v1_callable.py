@@ -389,6 +389,11 @@ def run_lu_change(cf, lu_type):
     print(f'####### {cf} - lu change #########')
     print('############################')
 
+    rollupPath = luconfig.rollupPath
+    rollUp2Path = luconfig.rollUp2Path
+    
+    print(rollUpPath, rollUp2Path)
+
     # try: # if a county fails don't disrupt other counties
     folder = luconfig.folder
     anci_folder = luconfig.anci_folder
