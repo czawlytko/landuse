@@ -357,8 +357,8 @@ def run_p6_rollup_change(cf, lu_type):
     folder = luconfig.folder
     startTime = time.time()
     # define paths
-    rollUpPath = os.path.join(anci_folder, 'P6RollUpLUCrosswalk.csv')
-    rollUp2Path = os.path.join(anci_folder, 'p6lu_change_all_classes.csv')
+    rollUpPath = os.path.join(os.path.dirname(sys.argv[0]), 'P6RollUpLUCrosswalk.csv') # get csv from whatever dir this func is in
+    rollUp2Path = os.path.join(os.path.dirname(sys.argv[0]), 'p6lu_change_all_classes.csv')
     t1_path = f"{folder}/{cf}/temp/{cf}_T1_LU_{lu_type}.tif"
     t2_path = f'{folder}/{cf}/output/{cf}_lu_2017_2018.tif'
     # Create dataframe relating LU classes to their Roll up class
