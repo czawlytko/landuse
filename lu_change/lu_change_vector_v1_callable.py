@@ -384,18 +384,18 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     return lc_change_gdf
 
 def run_lu_change(cf, lu_type):
+    import luconfig
     st_time = time.time()
     print('############################')
     print(f'####### {cf} - lu change #########')
     print('############################')
 
-    rollupPath = luconfig.rollupPath
-    rollUp2Path = luconfig.rollUp2Path
-    
-    print(rollUpPath, rollUp2Path)
+    print("\t", luconfig.crosswalk_csv)
+    print("\t", luconfig.lu_change_csv)
 
     # try: # if a county fails don't disrupt other counties
     folder = luconfig.folder
+
     anci_folder = luconfig.anci_folder
 
     main_path = os.path.abspath(f"{folder}/{cf}")

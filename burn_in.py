@@ -152,7 +152,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         'tidal': [tidal_composite_path, 'uint8']
         }
     if int(gdf.loc[gdf['cf'] == cf]['tidal']) ==0:
-        clip_dist.popitem()
+        clip_dict.popitem()
     
 
     for key in clip_dict:
