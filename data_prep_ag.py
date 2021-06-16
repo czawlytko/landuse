@@ -397,7 +397,7 @@ class DataPrepHelper:
         idx += 1
     return True
 
-  def to_gpkg(self,geo_df, outpath, layer_name):
+  def to_gpkg(self, geo_df, outpath, layer_name):
     self.geo_df = geo_df
     self.outpath = outpath
     self.layer_name = layer_name

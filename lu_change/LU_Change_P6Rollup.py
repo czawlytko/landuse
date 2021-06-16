@@ -17,19 +17,10 @@ import geopandas as gpd
 from rasterio.windows import from_bounds
 from rasterio.transform import Affine
 from osgeo import gdal, osr, gdalconst
+sys.path.insert(0,'..')
 
 import luconfig
-
-def etime(cf, note, starttime):
-    # print text and elapsed time in HMS or Seconds if time < 60 sec
-    elapsed =  time.time()-starttime
-    if elapsed > 60:
-        # f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
-        print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
-    else:
-        # f.write(f'{cf}--{note} runtime - {round(elapsed,2)} sec\n\n')
-        print(f'{cf}--{note} runtime - {round(elapsed,2)} sec')
-    # f.close()
+from helpers import etime
 
 def maskRasterWithRaster(mask_tif, ras_tif):
     """
@@ -288,12 +279,13 @@ def createRAT(band, df, vals, counts):
         12: (207, 186, 126), # PAS - beige
         13: (2, 58, 189), # WAT - deep sky blue,
     }
+
     for idx, row in df.iterrows():
-        if row['Change'] in vals:
-            # print(ct, int(row['Change']), 1, row['Change'])
-            rat.SetValueAsInt(ct, 0, int(row['Change']))
-            rat.SetValueAsInt(ct, 1, int(counts[vals.index(row['Change'])]))
-            t2_val = int(str(row['Change'])[-2:])
+        if row['Value'] in vals:
+            # print(ct, int(row['Value']), 1, row['Change'])
+            rat.SetValueAsInt(ct, 0, int(row['Value']))
+            rat.SetValueAsInt(ct, 1, int(counts[vals.index(row['Value'])]))
+            t2_val = int(str(row['Value'])[-2:])
             rgb_tup = rgb_dict[t2_val]
             rat.SetValueAsInt(ct, 2, int(rgb_tup[0]))
             rat.SetValueAsInt(ct, 3, int(rgb_tup[1]))

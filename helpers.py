@@ -22,8 +22,8 @@ def etime(batch, note, starttime):
         etime_file = Path(folder, batch, "log.txt")
 
     f = open(etime_file, "a")
-    f.write(f'--{note} runtime - {tformat(elapsed)}\n')
-    print(f'--{note} runtime - {tformat(elapsed)}\n')
+    f.write(f'--{note} runtime: {tformat(elapsed)}\n')
+    print(f'--{note} runtime: {tformat(elapsed)}\n----{time.asctime()}')
     f.close()
 
 

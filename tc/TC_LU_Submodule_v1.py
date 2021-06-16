@@ -29,7 +29,7 @@ import tc.dense_mp_v1 as env_pkg
 from tc.dense_mp_v1 import dense as callDense
 import tc.QGIS_geoprocessing as qgis_pkg
 import luconfig
-# from helpers import etime
+from helpers import etime
 
 
 #####################################################################################
@@ -629,19 +629,6 @@ def deleteTempFiles(cf):
             shutil.rmtree(qgis_temp_files_path)
         except:
             etime(cf, 'Remove temp qgis folder failed', time.time()) 
-
-def etime(cf, note, starttime):
-    folder = luconfig.folder
-    # print text and elapsed time in HMS or Seconds if time < 60 sec
-    elapsed = time.time()-starttime
-    f = open(f"{folder}/{cf}/etime_treesover_log.txt", "a")
-    if elapsed > 60:
-        f.write(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}\n\n')
-        print(f'{cf}--{note} runtime - {time.strftime("%H:%M:%S", time.gmtime(elapsed))}')
-    else:
-        f.write(f'{cf}--{note} runtime - {round(elapsed,2)} sec\n\n')
-        print(f'{cf}--{note} runtime - {round(elapsed,2)} sec')
-    f.close()
 
 def groupForest(forest_list, tct_list, tile, cf, NUM_CPUS):
     """
