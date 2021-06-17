@@ -363,11 +363,11 @@ def run_p6_rollup_change(cf, lu_type):
     t1_path = f"{folder}/{cf}/temp/{cf}_T1_LU_{lu_type}.tif"
     t2_path = f'{folder}/{cf}/output/{cf}_lu_2017_2018.tif'
     # Create dataframe relating LU classes to their Roll up class
-    rollUpDf = pd.read_csv(luconfig.rollupPath)
+    rollUpDf = pd.read_csv(luconfig.crosswalk_csv)
     etime(cf, 'Read roll up DF', startTime)
     st = time.time()
 
-    rollUpDf2 = pd.read_csv(luconfig.rollUp2Path)
+    rollUpDf2 = pd.read_csv(luconfig.lu_change_csv)
     etime(cf, 'Read roll up 2 DF', startTime)
     st = time.time()
 
