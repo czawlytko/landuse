@@ -1,0 +1,71 @@
+﻿Value,LandUse,Red,Green,Blue
+1,Water,0,92,230
+2,Emergent Wetlands,0,168,132
+3,Tree Canopy,115,115,0
+4,Scrub-Shrub,137,90,68
+5,Herbaceous,170,255,0
+6,Bare Developed,115,76,0
+7,Structures,255,0,0
+8,Other Impervious,178,178,178
+9,Impervious Roads,0,0,0
+1000,Water,0,92,230
+1120,Lakes/Ponds,0,197,255
+2110,Impervious Roads,0,0,0
+2120,Structures,255,0,0
+2130,Other Impervious,178,178,178
+2141,Tree Canopy over Roads,104,104,104
+2142,Tree Canopy over Structures,104,104,104
+2143,Tree Canopy over Other Impervious,104,104,104
+2210,Turf Grass,255,255,115
+2220,Bare Developed,115,76,0
+2231,Suspended Succession- Barren,233,255,190
+2232,Suspended Succession- Herbaceous,233,255,190
+2233,Suspended Succession- Scrub/shrub,233,255,190
+2240,Tree Canopy over Turf Grass,56,168,0
+3000,Forest,38,115,0
+3100,Forest,38,115,0
+3200,Tree Canopy in Agriculture,115,115,0
+3310,Harvested Forest Barren,115,38,0
+3320,Harvested Forest Herbaceous,115,38,0
+3330,Harvested Forest Scrub/shrub,115,38,0
+3410,Natural Succession Barren,170,255,0
+3420,Natural Succession Herbaceous,170,255,0
+3430,Natural Succession Scrub/shrub,170,255,0
+4101,Agriculture General Barren,255,170,0
+4102,Agriculture General Herbaceous,255,170,0
+4103,Agriculture General Scrub/shrub,255,170,0
+4111,Cropland- Barren,255,170,0
+4112,Cropland- Herbaceous,255,170,0
+4113,Cropland- Scrub/shrub,255,170,0
+4121,Pasture/Hay- Barren ,255,211,127
+4122,Pasture/Hay- Herbaceous,255,211,127
+4123,Pasture/Hay- Scrub/shrub,255,211,127
+4131,Orchard/Vineyard- Barren,92,137,68
+4132,Orchard/Vineyard- Herbaceous,92,137,68
+4133,Orchard/Vineyard- Scrub/shrub,92,137,68
+4141,Pasture/Hay- Barren,255,211,127
+4142,Pasture/Hay- Herbaceous,255,211,127
+4143,Pasture/Hay- Scrub/shrub,255,211,127
+4210,Solar- Impervious,168,0,132
+4221,Solar- Barren,115,0,76
+4222,Solar- Herbaceous,115,0,76
+4223,Solar- Scrub/Shrub,115,0,76
+4310,Extractive- Barren,223,115,255
+4320,Extractive- Other Impervious,223,115,255
+5000,Wetland,0,168,132
+5101,Tidal Wetlands Barren,114,146,130
+5102,Tidal Wetlands Herbaceous,114,146,130
+5103,Tidal Wetlands Scrub/shrub,114,146,130
+5104,Tidal Wetlands Tree Canopy,114,146,130
+5105,Tidal Wetlands Forest,114,146,130
+5201,Riverine (Non-Tidal) Wetlands Barren,0,168,132
+5202,Riverine (Non-Tidal) Wetlands Herbaceous,0,168,132
+5203,Riverine (Non-Tidal) Wetlands Scrub/shrub,0,168,132
+5204,Riverine (Non-Tidal) Wetlands Tree Canopy ,0,168,132
+5205,Riverine (Non-Tidal) Wetlands Forest,0,168,132
+5301,Terrene/Isolated Wetlands Barren,115,223,255
+5302,Terrene/Isolated Wetlands Herbaceous,115,223,255
+5303,Terrene/Isolated Wetlands Scrub/shrub,115,223,255
+5304,Terrene/Isolated Wetlands Tree Canopy,115,223,255
+5305,Terrene/Isolated Wetlands Forest,115,223,255
+5400,Bare Shore,255,255,115

@@ -50,7 +50,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     # run a check to ensure trees_over.gpkg exists?
 
     tidal_lookup = f'{anci_folder}/wetlands/tidal_lookup.csv'
-    slr_ras = f'{anci_folder}/SLR_1.tif'
+    slr_ras = f'{anci_folder}/wetlands/SLR_1.tif'
     symb_table= f'{anci_folder}/land_use_color_table_20210503.csv'
     county_shp = f'{anci_folder}/census/BayCounties20m_project.shp'
 
@@ -115,9 +115,9 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     st = time.time()
 
     #prep wetlands, whether nontidal or tidal
-    gdf=gpd.read_file(tidal_lookup)
+    tidal_df=gpd.read_file(tidal_lookup)
 
-    if int(gdf.loc[gdf['cf'] == cf]['tidal']) == 0:
+    if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) == 0:
         print(cf, " is a nontidal county. Running nontidal prep only")
         prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
         etime(cf, "Nontidal Wetlands rasterized", st)
@@ -151,7 +151,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         'ponds': [pond_ras_path, 'uint16'], 
         'tidal': [tidal_composite_path, 'uint8']
         }
-    if int(gdf.loc[gdf['cf'] == cf]['tidal']) ==0:
+    if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) ==0:
         clip_dict.popitem()
     
 
@@ -168,7 +168,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
     #make burn raster
 
-    if int(gdf.loc[gdf['cf'] == cf]['tidal']) ==0:
+    if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) ==0:
         rail_clip= clip_dict['rail'][2]
         nontidal_clip=clip_dict['nontidal'][2]
         lc_clip= clip_dict['lc'][2]
@@ -224,8 +224,9 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         os.remove(lc_clip)
     if os.path.exists(tc_clip):
         os.remove(tc_clip)
-    if os.path.exists(tidal_clip):
-        os.remove(tidal_clip)
+    if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) ==1:
+        if os.path.exists(tidal_clip):
+            os.remove(tidal_clip)
     if os.path.exists(slr_clip):
         os.remove(slr_clip)
     if os.path.exists(pond_clip):
@@ -420,7 +421,7 @@ def prepTidalWetlands(lc_path, tidal_path, tidal_ras_path, field_name):
     # print("pyramids built")
 
 def createTidalComposite(tidal_ras_path, slr_ras, slr_clip, tidal_composite_path):
-    #clip SLR_1 baywide raster (1)to same extent as tidal raster (2)
+    # clip SLR_1 baywide raster (1)to same extent as tidal raster (2)
     tidal_ras = tidal_ras_path
     slr_ras= slr_ras
     out_slr_clip = slr_clip
