@@ -284,7 +284,7 @@ def generate_TA_dict(cf):
         }
     luz_sid = {
         'name' : "Local Use or Zoning",
-        'colname' : 's_luz',
+        'colname' : 's_luz_',
         'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
         'tabPath' : f'{folder}/{cf}/temp/luz_sid_ta.dbf',
         'zone': 'SID',
@@ -292,7 +292,7 @@ def generate_TA_dict(cf):
         }
     luz_pid = {
         'name' : "Local Use or Zoning",
-        'colname' : 'p_luz',
+        'colname' : 'p_luz_',
         'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
         'tabPath' : f'{folder}/{cf}/temp/luz_pid_ta.dbf',
         'zone': 'PID',

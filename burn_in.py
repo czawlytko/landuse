@@ -31,6 +31,7 @@ from fiona.crs import from_epsg
 import pandas as pd
 from osgeo import gdal, osr, gdalconst
 from scipy.ndimage import label
+import gc
 
 from helpers import etime
 #####################################################################################
@@ -98,49 +99,58 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     #mask land cover to correct extent using 20m buffered county polygon
     clipRasByGeom(county_shp, cf, og_lc_path, lc_path)
     etime(cf, "LC masked by county boundary", start)
-    st = time.time()
 
     #prep tct
+    st = time.time()
     prepTCT(lc_path, tc_path, proj_folder, cf, 'lu_code')
     etime(cf, "TCT layers rasterized", st)
-    st = time.time()
 
-    createTCComposite(proj_folder, cf, tc_composite_path)
-    etime(cf, "TC composite created", st)
-    st = time.time()
+    if not os.path.isfile(tc_composite_path):
+        st = time.time()
+        createTCComposite(proj_folder, cf, tc_composite_path)
+        etime(cf, "TC composite created", st)
 
-    #prep ponds
-    prepPonds(lc_path, pond_path, pond_ras_path, 'pond')
-    etime(cf, "Ponds rasterized", st)
-    st = time.time()
+    if not os.path.isfile(pond_ras_path):
+        #prep ponds
+        st = time.time()
+        prepPonds(lc_path, pond_path, pond_ras_path, 'pond')
+        etime(cf, "Ponds rasterized", st)
 
+    st = time.time()
     #prep wetlands, whether nontidal or tidal
     tidal_df=gpd.read_file(tidal_lookup)
 
     if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) == 0:
         print(cf, " is a nontidal county. Running nontidal prep only")
-        prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
-        etime(cf, "Nontidal Wetlands rasterized", st)
-        st = time.time()
-        
+        if not os.path.isfile(nontidal_ras_path):
+            st = time.time()
+            prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
+            etime(cf, "Nontidal Wetlands rasterized", st)
+
     else:
         print(cf, " is a tidal county. Running nontidal and tidal prep")
-        prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
-        etime(cf, "Nontidal Wetlands rasterized", st)
-        st = time.time()
+        if not os.path.isfile(nontidal_ras_path):
+            st = time.time()
+            prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
+            etime(cf, "Nontidal Wetlands rasterized", st)
 
-        prepTidalWetlands(lc_path, tidal_path, tidal_ras_path, 'w_type_code')
-        etime(cf, "Tidal Wetlands rasterized", st)
-        st = time.time()
+        if not os.path.isfile(tidal_ras_path):       
+            st = time.time()
+            prepTidalWetlands(lc_path, tidal_path, tidal_ras_path, 'w_type_code')
+            etime(cf, "Tidal Wetlands rasterized", st)
 
-        createTidalComposite(tidal_ras_path, slr_ras, slr_clip, tidal_composite_path)
-        etime(cf, "Tidal Wetlands composite raster created", st)
-        st = time.time()
+        if not os.path.isfile(tidal_composite_path):   
+            st = time.time()             # balt_24 hitting 80% memory usage here
+            createTidalComposite(tidal_ras_path, slr_ras, slr_clip, tidal_composite_path)
+            etime(cf, "Tidal Wetlands composite raster created", st)
+
 
     # rasterize LU
-    rasterizeLU(lc_path, lu_path, lu_ras_path, 'lu_code')
-    etime(cf, "Land use rasterized", st)
-    st = time.time()
+    if not os.path.isfile(lu_ras_path):   
+        st = time.time()
+        rasterizeLU(lc_path, lu_path, lu_ras_path, 'lu_code')
+        etime(cf, "Land use rasterized", st)
+        st = time.time()
 
     # run burn ins
     clip_dict = {
@@ -187,15 +197,47 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         reclassBurnInValueTidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, tidal_clip, pond_clip)
 
     etime(cf, "Reclass burn done", st)
+
+
+    if not os.path.isfile(out_lu_burnin_path):
+        # create final burn in array and pass to add symbology function to write
+        st = time.time()
+        dst_array, burnin_meta= reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_lu_burnin_path, lc_clip)
+        etime(cf, "Burn in Complete.", st)
+
+    #d try to elete clips and intermediates
     st = time.time()
+    
+    if "rail_src" in locals():
+        print("\nrail_src exists in locals\n")
+        del rail_src
+
+    if not "rail_src" in locals():
+        print("\nrail_src is NOT in locals()\n")
+    
+    gc.collect()
+
+    if not "rail_src" in locals():
+        print("\nrail_src is NOT in locals()  POST GC\n")
+
+    if os.path.exists(rail_clip):
+        os.remove(rail_clip)
+    if os.path.exists(nontidal_clip):
+        os.remove(nontidal_clip)
+    if os.path.exists(lc_clip):
+        os.remove(lc_clip)
+    if os.path.exists(tc_clip):
+        os.remove(tc_clip)
+    if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) ==1:
+        if os.path.exists(tidal_clip):
+            os.remove(tidal_clip)
+    if os.path.exists(slr_clip):
+        os.remove(slr_clip)
+    if os.path.exists(pond_clip):
+        os.remove(pond_clip)
 
 
-    #create final burn in array and pass to add symbology function to write
-    dst_array, burnin_meta= reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_lu_burnin_path, lc_clip)
-    etime(cf, "Burn in done", st)
-    st = time.time()
-
-    #fix forest pixels
+    # fix forest pixels
     tmp = reclassVals(dst_array) # call this function
     dst_array = np.where(tmp > 0, tmp, dst_array) # update your burn in array
     del tmp
@@ -215,24 +257,6 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
 
 
-    #delete clips and intermediates
-    if os.path.exists(rail_clip):
-        os.remove(rail_clip)
-    if os.path.exists(nontidal_clip):
-        os.remove(nontidal_clip)
-    if os.path.exists(lc_clip):
-        os.remove(lc_clip)
-    if os.path.exists(tc_clip):
-        os.remove(tc_clip)
-    if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) ==1:
-        if os.path.exists(tidal_clip):
-            os.remove(tidal_clip)
-    if os.path.exists(slr_clip):
-        os.remove(slr_clip)
-    if os.path.exists(pond_clip):
-        os.remove(pond_clip)
-    
-
     etime(cf, "Total Run ", start)
     return 0
 
@@ -248,37 +272,38 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
 
 def prepTCT(lc_path, tc_path, proj_folder, cf, field_name):
-    fn_ras = lc_path
-    fn_vec = tc_path
-    field_name=field_name
+    if not os.path.isfile(tc_path):
+        fn_ras = lc_path
+        fn_vec = tc_path
+        field_name=field_name
 
-    layer_list = ['tct', 'tct_bufs', 'toa'] #, 'tct', 'tct_bufs', 'toa']
-    for layer in layer_list:
-        vec_ds = gpd.read_file(fn_vec, layer=layer)
-        out_ras = f'{proj_folder}/{cf}/output/{layer}.tif'
-        print(out_ras)
+        layer_list = ['tct', 'tct_bufs', 'toa'] #, 'tct', 'tct_bufs', 'toa']
+        for layer in layer_list:
+            vec_ds = gpd.read_file(fn_vec, layer=layer)
+            out_ras = f'{proj_folder}/{cf}/output/{layer}.tif'
+            print(out_ras)
 
-        rst = rasterio.open(fn_ras)
-        meta = rst.meta.copy()
-        meta.update(compress='lzw', dtype='uint16')
+            rst = rasterio.open(fn_ras)
+            meta = rst.meta.copy()
+            meta.update(compress='lzw', dtype='uint16')
 
-        with rasterio.open(out_ras, 'w+', **meta) as out:
-            out_arr = out.read(1)
+            with rasterio.open(out_ras, 'w+', **meta) as out:
+                out_arr = out.read(1)
 
-            # this is where we create a generator of geom, value pairs to use in rasterizing
-            shapes = ((geom,value) for geom, value in zip(vec_ds.geometry, vec_ds[field_name]))
+                # this is where we create a generator of geom, value pairs to use in rasterizing
+                shapes = ((geom,value) for geom, value in zip(vec_ds.geometry, vec_ds[field_name]))
 
-            tc_ras = features.rasterize(shapes=shapes, fill=0, out=out_arr, transform=out.transform)
-            out.write_band(1, tc_ras)
-        out.close()
-        print(layer, " psegs with tc rasterized")
+                tc_ras = features.rasterize(shapes=shapes, fill=0, out=out_arr, transform=out.transform)
+                out.write_band(1, tc_ras)
+            out.close()
+            print(layer, " psegs with tc rasterized")
 
 
-        # factors = [2, 4, 8, 16, 32, 64, 128, 256, 512]
-        # with rasterio.open(out_ras, 'r+') as dst:
-        #     dst.build_overviews(factors, Resampling.nearest)
-        #     dst.close()
-        # print(layer, " pyramids built")
+            # factors = [2, 4, 8, 16, 32, 64, 128, 256, 512]
+            # with rasterio.open(out_ras, 'r+') as dst:
+            #     dst.build_overviews(factors, Resampling.nearest)
+            #     dst.close()
+            # print(layer, " pyramids built")
 
 def createTCComposite(proj_folder, cf, tc_composite_path):
     #make single tc raster
@@ -306,10 +331,12 @@ def createTCComposite(proj_folder, cf, tc_composite_path):
                     
                     dst_array = dst_array.astype("uint16")
                     dst.write(dst_array, 1)
-
-    os.remove(tct_in)
-    os.remove(toa_in)
-    os.remove(tct_bufs)
+    if os.path.isfile(tct_in):
+        os.remove(tct_in)
+    if os.path.isfile(toa_in):
+        os.remove(toa_in)
+    if os.path.isfile(tct_bufs):
+        os.remove(tct_bufs)
 
 def prepPonds(lc_path, pond_path, pond_ras_path, field_name):
     fn_ras = lc_path

@@ -117,7 +117,7 @@ class DataPrepHelper:
     layer_name = layer_info['layer_name']
     qgs = QgsApplication([], False)
 
-    qgs.initQgis()
+    qgs.initQgis() # must be initialized BEFORE qgis imports
 
     # # initialize processing to access native QGIS algorithms
     from qgis import processing
@@ -214,7 +214,9 @@ class DataPrepHelper:
     out.close()
     return out_arr
 
+
   def vectorizeRaster(self, unique_array, raster_path):
+    # old code, not being used
     self.unique_array = unique_array
     self.raster_path = raster_path
     with rasterio.open(raster_path) as src:
@@ -329,12 +331,14 @@ project_folder = system.project_folder
 county = system.county
 anci_folder = system.anci_folder
 
+# credentials for lu3 VM (linux luv1_base has different creds)
 postgres_db = 'landuse_gis' 
 postgres_user = 'postgres'
 postgres_pass = 'landuse_dev'
 postgres_host = 'localhost'
 
 def curser(params):
+    # must be outside of a class for dask to reach it.
   conDB = psycopg2.connect(host=postgres_host,
   database=postgres_db,
   user=postgres_user,
@@ -404,6 +408,7 @@ if __name__ == '__main__':
       'layer_path':parcels_gpkg,
       'layer_name':'vectorized_parcels'
     }
+
     segs_layer = helper.validate_layer(layer_info_segs)
     print('segments validated')
     parcs_layer = helper.validate_layer(layer_info_parcels)
@@ -422,6 +427,7 @@ if __name__ == '__main__':
       'geo_df':lc_segs,
       'name':'lc_segs'
     }
+    
     parcs_dict = {
       'geo_df':parcels,
       'name':'parcels'
@@ -431,14 +437,12 @@ if __name__ == '__main__':
     parcsw = helper.to_database(parcs_dict)
     print('parcels to DB:',parcsw)
 
-
     time_helper.etime(county,'parcels and lc_segs to database tables', st)
     print('starting the union in SQL') 
     st = time.time()
     helper.db_overlay('psegs')
     time_helper.etime(county,'created psegs',st)
-    
-    
+        
     st = time.time()
     print('reading in psegs, adding PSIDs, validating all geometries, and writing to gpkg')
     so_gdf = helper.read_psegs('psegs')
@@ -455,12 +459,12 @@ if __name__ == '__main__':
     out_ras_PID = '{0}/{1}/input/ps_parcels.tif'.format(project_folder,county)
     out_ras_SID = '{0}/{1}/input/ps_segs.tif'.format(project_folder,county)
 
+    # we might not need this if not used for TA
     so_gdf = gpd.read_file(psegs_path)
     print('making a raster based on parcels')
     st = time.time()
     helper.prepRaster(snap_ras, so_gdf, 'pid',out_ras_PID)
     time_helper.etime(county, 'Raster created based on PID', st)
-
 
     st = time.time()
     print('making a raster based on segments')

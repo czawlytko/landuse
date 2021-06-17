@@ -81,7 +81,7 @@ if __name__ == "__main__":
                 print("Land Use failed. See logs.")
                 sys.exit()
         else:
-            print('LU already complete')
+            print('\nLU already complete')
             lu_flag = 0
             restart = 1
 
@@ -106,21 +106,23 @@ if __name__ == "__main__":
                 print("Trees over Submodule incomplete; Check log for error")
                 sys.exit()
         else:
-            print('TC already complete')
+            print('\nTC already complete')
             tc_flag = 0
         # BURN IN
-
-        if lu_flag == 0 and tc_flag == 0 and not os.path.isfile(f"{folder}/{cf}/output/{cf}_lu_2017_2018.tif"):
+        out_lu_burnin_path = f"{folder}/{cf}/output/{cf}_lu_2017_2018.tif"
+        if lu_flag == 0 and tc_flag == 0 and not os.path.isfile(out_lu_burnin_path):
             burnin_flag = burn_in.run_burnin_submodule(luconfig.folder, luconfig.anci_folder, cf)
             if burnin_flag == -1:
                 print("Burn in Submodule incomplete; Check log for error")
                 sys.exit()
         if os.path.isfile(f"{folder}/{cf}/output/{cf}_lu_2017_2018.tif"):
+            print('\nBurn in already complete')
             burnin_flag = 0
 
         
         # LAND USE CHANGE
-        if lu_flag == 0  and burnin_flag == 0 and tc_flag == 0:
+        
+        if lu_flag == 0  and burnin_flag == 0 and tc_flag == 0 and os.path.isfile(out_lu_burnin_path):
             lu_type = 'v1'
             lu_chg_flag = lu_change_module.run_lu_change(cf, lu_type)
 

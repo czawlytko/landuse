@@ -366,11 +366,11 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     all_forest = all_forest[['zone', 'GID', 'Method', 'LC_Change', 'g_area_x', 'geometry']]
     all_forest = all_forest.rename(columns={'g_area_x':'g_area'})
     all_forest = all_forest[all_forest['g_area'] >= 4047]
-    all_forest.loc[:, 'T1_LU_Code'] = 0
-    all_forest.loc[:, 'T1LC'] = 'Tree Canopy'
     lc_change_gdf = lc_change_gdf.merge(groups, on='zone', how='left') # add group area
-    lc_change_gdf = lc_change_gdf.append(all_forest[['zone', 'g_area', 'GID', 'Method', 'LC_Change', 'T1_LU_Code', 'T1LC', 'geometry']]) # add T1 TC touching tc change
-    cols = list(lc_change_gdf)
+    if len(all_forest) > 0:
+        all_forest.loc[:, 'T1_LU_Code'] = 0
+        all_forest.loc[:, 'T1LC'] = 'Tree Canopy'
+        lc_change_gdf = lc_change_gdf.append(all_forest[['zone', 'g_area', 'GID', 'Method', 'LC_Change', 'T1_LU_Code', 'T1LC', 'geometry']]) # add T1 TC touching tc change
     lc_change_gdf = lc_change_gdf.reset_index()[cols]
     lc_change_gdf.loc[(lc_change_gdf['zone'].isin(rem_zones))&(lc_change_gdf['T1LC'] == 'Tree Canopy')&(lc_change_gdf['g_area'].isna()), 'g_area'] = lc_change_gdf.geometry.area
     lc_change_gdf = lch.indirectTC(lc_change_gdf[(lc_change_gdf['T1LC'] == 'Tree Canopy')&(lc_change_gdf['T1_LU_Code']==0)], psegs, lc_change_gdf)
