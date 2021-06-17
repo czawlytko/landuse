@@ -1,5 +1,7 @@
-import azure-batch
-import azure-storage-blob
+import azure.storage.blob as azureblob
+import azure.batch.batch_service_client as batch
+import azure.batch.batch_auth as batch_auth
+import azure.batch.models as batchmodels
 import fiona
 import qgis
 import gdal
