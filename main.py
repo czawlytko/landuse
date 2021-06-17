@@ -6,7 +6,6 @@ import rasterio as rio
 import rasterio.mask
 import numpy as np
 import fiona
-
 import time
 import os
 import sys

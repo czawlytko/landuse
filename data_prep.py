@@ -20,7 +20,7 @@ from rasterio.windows import Window
 from rasterio.io import MemoryFile
 from collections import defaultdict
 import fiona
-# import gdal
+
 import numpy as np
 import math
 import sys
