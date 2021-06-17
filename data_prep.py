@@ -39,6 +39,8 @@ import qgis
 from qgis.core import *
 import argparse
 import sys
+import fnmatch
+
 
 
 class commandLine:
