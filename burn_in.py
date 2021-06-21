@@ -34,6 +34,7 @@ from scipy.ndimage import label
 import gc
 
 from helpers import etime
+from helpers import memCheck as mem
 #####################################################################################
 #------------------------------- MAIN ------------- --------------------------------#
 #####################################################################################
@@ -121,20 +122,23 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     tidal_df=gpd.read_file(tidal_lookup)
 
     if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) == 0:
-        print(cf, " is a nontidal county. Running nontidal prep only")
+        print(cf, f"{cf} is a non-tidal county")
         if not os.path.isfile(nontidal_ras_path):
+            print("Running non-tidal prep only")
             st = time.time()
             prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
             etime(cf, "Nontidal Wetlands rasterized", st)
 
     else:
-        print(cf, " is a tidal county. Running nontidal and tidal prep")
+        print(cf, " is a tidal county")
         if not os.path.isfile(nontidal_ras_path):
+            print("running nontidal")
             st = time.time()
             prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
             etime(cf, "Nontidal Wetlands rasterized", st)
 
-        if not os.path.isfile(tidal_ras_path):       
+        if not os.path.isfile(tidal_ras_path):      
+            print("running tidal prep") 
             st = time.time()
             prepTidalWetlands(lc_path, tidal_path, tidal_ras_path, 'w_type_code')
             etime(cf, "Tidal Wetlands rasterized", st)
@@ -170,13 +174,12 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         out_clip= fr'{proj_folder}/{cf}/output/{cf}_{key}_clip.tif'
         clip_dict[key].append(out_clip)
         dtype= (clip_dict[key][1])
-        
         clip_to_lu(lu_ras_path, key, in_clip, out_clip, dtype)
 
     etime(cf, "Clips done", st)
     st = time.time()
 
-    #make burn raster
+    # make burn raster
 
     if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) ==0:
         rail_clip= clip_dict['rail'][2]
@@ -186,6 +189,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         pond_clip = clip_dict['ponds'][2]
 
         reclassBurnInValueNontidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, pond_clip)
+    
     else:
         rail_clip= clip_dict['rail'][2]
         nontidal_clip=clip_dict['nontidal'][2]
@@ -196,7 +200,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
         reclassBurnInValueTidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, tidal_clip, pond_clip)
 
-    etime(cf, "Reclass burn done", st)
+    etime(cf, "Reclass burn done.", st)
 
 
     if not os.path.isfile(out_lu_burnin_path):
@@ -207,18 +211,6 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
     #d try to elete clips and intermediates
     st = time.time()
-    
-    if "rail_src" in locals():
-        print("\nrail_src exists in locals\n")
-        del rail_src
-
-    if not "rail_src" in locals():
-        print("\nrail_src is NOT in locals()\n")
-    
-    gc.collect()
-
-    if not "rail_src" in locals():
-        print("\nrail_src is NOT in locals()  POST GC\n")
 
     if os.path.exists(rail_clip):
         os.remove(rail_clip)
@@ -228,21 +220,23 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         os.remove(lc_clip)
     if os.path.exists(tc_clip):
         os.remove(tc_clip)
-    if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) ==1:
-        if os.path.exists(tidal_clip):
-            os.remove(tidal_clip)
+    if int(tidal_df.loc[tidal_df['cf'] == cf]['tidal']) ==1 and os.path.isfile(tidal_clip):
+        os.remove(tidal_clip)
     if os.path.exists(slr_clip):
         os.remove(slr_clip)
     if os.path.exists(pond_clip):
         os.remove(pond_clip)
 
-
     # fix forest pixels
-    tmp = reclassVals(dst_array) # call this function
-    dst_array = np.where(tmp > 0, tmp, dst_array) # update your burn in array
-    del tmp
-    etime(cf, "Fix forest pixels done", st)
-    st = time.time()
+    try:
+        print(f'Start fix forest pixels {time.asctime()}')
+        tmp = reclassVals(dst_array)
+        dst_array = np.where(tmp > 0, tmp, dst_array) # update your burn in array
+        del tmp
+        etime(cf, "Fix forest pixels done", st)
+        st = time.time()
+    except:
+        print('failed to fix forest pixels')
 
     
     #add symbology and write out final raster
@@ -272,7 +266,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
 
 def prepTCT(lc_path, tc_path, proj_folder, cf, field_name):
-    if not os.path.isfile(tc_path):
+
         fn_ras = lc_path
         fn_vec = tc_path
         field_name=field_name
@@ -281,22 +275,25 @@ def prepTCT(lc_path, tc_path, proj_folder, cf, field_name):
         for layer in layer_list:
             vec_ds = gpd.read_file(fn_vec, layer=layer)
             out_ras = f'{proj_folder}/{cf}/output/{layer}.tif'
-            print(out_ras)
+            if not os.path.isfile(out_ras):
+                print(out_ras)
 
-            rst = rasterio.open(fn_ras)
-            meta = rst.meta.copy()
-            meta.update(compress='lzw', dtype='uint16')
+                rst = rasterio.open(fn_ras)
+                meta = rst.meta.copy()
+                meta.update(compress='lzw', dtype='uint16')
 
-            with rasterio.open(out_ras, 'w+', **meta) as out:
-                out_arr = out.read(1)
+                with rasterio.open(out_ras, 'w+', **meta) as out:
+                    out_arr = out.read(1)
 
-                # this is where we create a generator of geom, value pairs to use in rasterizing
-                shapes = ((geom,value) for geom, value in zip(vec_ds.geometry, vec_ds[field_name]))
+                    # this is where we create a generator of geom, value pairs to use in rasterizing
+                    shapes = ((geom,value) for geom, value in zip(vec_ds.geometry, vec_ds[field_name]))
 
-                tc_ras = features.rasterize(shapes=shapes, fill=0, out=out_arr, transform=out.transform)
-                out.write_band(1, tc_ras)
-            out.close()
-            print(layer, " psegs with tc rasterized")
+                    tc_ras = features.rasterize(shapes=shapes, fill=0, out=out_arr, transform=out.transform)
+                    out.write_band(1, tc_ras)
+                out.close()
+                print(layer, " psegs with tc rasterized")
+            else:
+                print(f'{layer}.tif already exists')
 
 
             # factors = [2, 4, 8, 16, 32, 64, 128, 256, 512]
@@ -565,7 +562,7 @@ def rasterizeLU(lc_path, lu_path, lu_ras_path, field_name):
 #########################################################################################
 def clip_to_lu(lu_ras_path, key, in_ras, out_ras, dtype):
     lu_ras = lu_ras_path
-    if os.path.exists(out_ras): 
+    if os.path.isfile(out_ras):
         print ("clip already exists. skipping: ", key)
     
     else:
@@ -703,13 +700,40 @@ def reclassComputeNontidal(lc_array, rail_array, wetlands_array, lu_array, tc_ar
 def reclassBurnInValueTidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, tidal_clip, pond_clip):
     lu_ras = lu_ras_path
     out_burnin = out_burnin_path
+    if os.path.isfile():
+        with rasterio.open(lc_clip, 'r') as lc_src:
+            with rasterio.open(rail_clip, 'r') as rail_src:
+                with rasterio.open(nontidal_clip, 'r') as wetlands_src:
+                    with rasterio.open(lu_ras, 'r') as lu_src:
+                        with rasterio.open(tc_clip, 'r') as tc_src:
+                            with rasterio.open(tidal_clip, 'r') as tidal_src:
+                                with rasterio.open(pond_clip, 'r') as pond_src:
+                                    lc_clip_meta = lc_src.meta.copy()
+                                    lc_clip_meta.update({"dtype": "uint16"})
 
-    with rasterio.open(lc_clip, 'r') as lc_src:
-        with rasterio.open(rail_clip, 'r') as rail_src:
-            with rasterio.open(nontidal_clip, 'r') as wetlands_src:
-                with rasterio.open(lu_ras, 'r') as lu_src:
-                    with rasterio.open(tc_clip, 'r') as tc_src:
-                        with rasterio.open(tidal_clip, 'r') as tidal_src:
+                                    with rasterio.open(out_burnin, 'w', **lc_clip_meta) as dst:
+                                        #do band math with numpy arrays
+                                        lc_array = lc_src.read(1)
+                                        rail_array = rail_src.read(1)
+                                        wetlands_array= wetlands_src.read(1) 
+                                        lu_array = lu_src.read(1)
+                                        tc_array= tc_src.read(1)
+                                        tidal_array= tidal_src.read(1)
+                                        pond_array = pond_src.read(1)
+
+                                        result=reclassComputeTidal(lc_array, rail_array, wetlands_array, lu_array, tc_array, tidal_array, pond_array)
+                                        dst.write(result, 1)
+
+def reclassBurnInValueNontidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, pond_clip):
+    lu_ras = lu_ras_path
+    out_burnin = out_burnin_path
+
+    if not os.path.isfile(out_burnin):
+        with rasterio.open(lc_clip, 'r') as lc_src:
+            with rasterio.open(rail_clip, 'r') as rail_src:
+                with rasterio.open(nontidal_clip, 'r') as wetlands_src:
+                    with rasterio.open(lu_ras, 'r') as lu_src:
+                        with rasterio.open(tc_clip, 'r') as tc_src:
                             with rasterio.open(pond_clip, 'r') as pond_src:
                                 lc_clip_meta = lc_src.meta.copy()
                                 lc_clip_meta.update({"dtype": "uint16"})
@@ -721,37 +745,10 @@ def reclassBurnInValueTidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, no
                                     wetlands_array= wetlands_src.read(1) 
                                     lu_array = lu_src.read(1)
                                     tc_array= tc_src.read(1)
-                                    tidal_array= tidal_src.read(1)
                                     pond_array = pond_src.read(1)
 
-                                    result=reclassComputeTidal(lc_array, rail_array, wetlands_array, lu_array, tc_array, tidal_array, pond_array)
+                                    result=reclassComputeNontidal(lc_array, rail_array, wetlands_array, lu_array, tc_array, pond_array)
                                     dst.write(result, 1)
-
-def reclassBurnInValueNontidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, pond_clip):
-    lu_ras = lu_ras_path
-    out_burnin = out_burnin_path
-
-
-    with rasterio.open(lc_clip, 'r') as lc_src:
-        with rasterio.open(rail_clip, 'r') as rail_src:
-            with rasterio.open(nontidal_clip, 'r') as wetlands_src:
-                with rasterio.open(lu_ras, 'r') as lu_src:
-                    with rasterio.open(tc_clip, 'r') as tc_src:
-                        with rasterio.open(pond_clip, 'r') as pond_src:
-                            lc_clip_meta = lc_src.meta.copy()
-                            lc_clip_meta.update({"dtype": "uint16"})
-
-                            with rasterio.open(out_burnin, 'w', **lc_clip_meta) as dst:
-                                #do band math with numpy arrays
-                                lc_array = lc_src.read(1)
-                                rail_array = rail_src.read(1)
-                                wetlands_array= wetlands_src.read(1) 
-                                lu_array = lu_src.read(1)
-                                tc_array= tc_src.read(1)
-                                pond_array = pond_src.read(1)
-
-                                result=reclassComputeNontidal(lc_array, rail_array, wetlands_array, lu_array, tc_array, pond_array)
-                                dst.write(result, 1)
 
 #burn in burn in values to lc
 def reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_lu_burnin_path, lc_clip):
@@ -830,7 +827,7 @@ def clipRasByGeom(county_shp, cf, og_path, clip_path):
     #return out_image, out_meta
 
 
-#FIX FOREST FUNCTION
+# FIX FOREST FUNCTION
 def reclassVals(ary):
     """
     Method: reclassVals()
@@ -847,11 +844,23 @@ def reclassVals(ary):
         [1,1,1],
         [0,1,0]]
     # forest zones under 100 pixels
+
     for_zones = label(np.where(ary==3100, 1, 0), structure=s)
+    
+    print(len(for_zones)) # JCTEST
+    mem()
+
     for_zones = for_zones[0]
+
+    print(len(for_zones)) # JCTEST
+    mem()
+
     zones, counts = np.unique(for_zones, return_counts=True)
     zones = list(zones)
     counts = list(counts)
+
+    mem()
+
     if 0 in zones:
         idx = zones.index(0)
         zones.remove(0)

@@ -80,7 +80,7 @@ def datacheck(cf, psegs, folder):
 
     # required values that could realistically be missing from an entire county resulting in no column
     flex_requiredcolumns = [
-            'p_lc_2',
+            'p_lc_1', 'p_lc_2', 'p_lc_4', 'p_lc_6',
             's_c18_1', 's_c18_2', 's_c18_3', 's_c18_4',
             'p_c18_1', 'p_c18_2', 'p_c18_3', 'p_c18_4',
             's_c1719_1', 's_c1719_2', 's_c1719_3', 's_c1719_4',
@@ -99,7 +99,7 @@ def datacheck(cf, psegs, folder):
     LC_classes = psegs.Class_name.unique()
     print(LC_classes)
     
-    psegs = psegs[(psegs.Class_name != "")] # this removed psegs we wanted to keep
+    psegs = psegs[(psegs.Class_name != "")]
     post = len(psegs)
     LC_classes = psegs.Class_name.unique()
     print(LC_classes)
