@@ -18,6 +18,7 @@ from rasterio.mask import mask
 from rasterio.enums import Resampling
 from rasterio import Affine
 from rasterio.windows import Window
+from rasterio.features import rasterize, shapes
 import concurrent.futures
 import fiona
 import time
@@ -25,7 +26,7 @@ import numpy as np
 import os
 import multiprocessing as mp 
 import threading
-from shapely.geometry import box, mapping
+from shapely.geometry import box, mapping, Polygon
 import shapely
 from fiona.crs import from_epsg
 import pandas as pd
@@ -50,7 +51,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     # run a check to ensure trees_over.gpkg exists?
 
     tidal_lookup = f'{anci_folder}/wetlands/tidal_lookup.csv'
-    slr_ras = f'{anci_folder}/SLR_1.tif'
+    slr_ras = f'{anci_folder}/wetlands/SLR_1.tif'
     symb_table= f'{anci_folder}/land_use_color_table_20210503.csv'
     county_shp = f'{anci_folder}/census/BayCounties20m_project.shp'
 
@@ -83,6 +84,7 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     lu_ras_path = f'{proj_folder}/{cf}/output/lu_ras.tif'
 
     out_burnin_path = f'{proj_folder}/{cf}/output/{cf}_burnin.tif'
+    out_pre_fixforest_path = f'{proj_folder}/{cf}/output/{cf}_burnin_pre_fixforest.tif'
     out_lu_burnin_path = f'{proj_folder}/{cf}/output/{cf}_lu_2017_2018.tif'
     
 
@@ -96,21 +98,26 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     start = time.time()
 
     #mask land cover to correct extent using 20m buffered county polygon
-    clipRasByGeom(county_shp, cf, og_lc_path, lc_path)
+    if not os.path.exists(lc_path):
+        clipRasByGeom(county_shp, cf, og_lc_path, lc_path)
     etime(cf, "LC masked by county boundary", start)
     st = time.time()
 
     #prep tct
-    prepTCT(lc_path, tc_path, proj_folder, cf, 'lu_code')
+    if not os.path.exists(tc_composite_path):
+        prepTCT(lc_path, tc_path, proj_folder, cf, 'lu_code')
     etime(cf, "TCT layers rasterized", st)
     st = time.time()
 
-    createTCComposite(proj_folder, cf, tc_composite_path)
+    if not os.path.exists(tc_composite_path):
+        createTCComposite(proj_folder, cf, tc_composite_path)
     etime(cf, "TC composite created", st)
     st = time.time()
 
     #prep ponds
-    prepPonds(lc_path, pond_path, pond_ras_path, 'pond')
+    if os.path.exists(pond_path):
+        if not os.path.exists(pond_ras_path):
+            prepPonds(lc_path, pond_path, pond_ras_path, 'pond')
     etime(cf, "Ponds rasterized", st)
     st = time.time()
 
@@ -119,26 +126,31 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
     if int(gdf.loc[gdf['cf'] == cf]['tidal']) == 0:
         print(cf, " is a nontidal county. Running nontidal prep only")
-        prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
+        if not os.path.exists(nontidal_ras_path):
+            prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
         etime(cf, "Nontidal Wetlands rasterized", st)
         st = time.time()
         
     else:
         print(cf, " is a tidal county. Running nontidal and tidal prep")
-        prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
+        if not os.path.exists(nontidal_ras_path):
+            prepNontidalWetlands(lc_path, nontidal_path, nontidal_ras_path, 'w_type_code')
         etime(cf, "Nontidal Wetlands rasterized", st)
         st = time.time()
 
-        prepTidalWetlands(lc_path, tidal_path, tidal_ras_path, 'w_type_code')
+        if not os.path.exists(tidal_ras_path):
+            prepTidalWetlands(lc_path, tidal_path, tidal_ras_path, 'w_type_code')
         etime(cf, "Tidal Wetlands rasterized", st)
         st = time.time()
 
-        createTidalComposite(tidal_ras_path, slr_ras, slr_clip, tidal_composite_path)
+        if not os.path.exists(tidal_composite_path):
+            createTidalComposite(tidal_ras_path, slr_ras, slr_clip, tidal_composite_path)
         etime(cf, "Tidal Wetlands composite raster created", st)
         st = time.time()
 
     # rasterize LU
-    rasterizeLU(lc_path, lu_path, lu_ras_path, 'lu_code')
+    if not os.path.exists(lu_ras_path):
+        rasterizeLU(lc_path, lu_path, lu_ras_path, 'lu_code')
     etime(cf, "Land use rasterized", st)
     st = time.time()
 
@@ -175,7 +187,9 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         tc_clip= clip_dict['tc'][2]
         pond_clip = clip_dict['ponds'][2]
 
-        reclassBurnInValueNontidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, pond_clip)
+        if not os.path.exists(out_burnin_path):
+            reclassBurnInValueNontidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, pond_clip)
+    
     else:
         rail_clip= clip_dict['rail'][2]
         nontidal_clip=clip_dict['nontidal'][2]
@@ -184,21 +198,28 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         tidal_clip= clip_dict['tidal'][2]
         pond_clip= clip_dict['ponds'][2]
 
-        reclassBurnInValueTidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, tidal_clip, pond_clip)
+        if not os.path.exists(out_burnin_path):
+            reclassBurnInValueTidal(lu_ras_path, out_burnin_path, lc_clip, rail_clip, nontidal_clip, tc_clip, tidal_clip, pond_clip)
 
     etime(cf, "Reclass burn done", st)
     st = time.time()
 
 
     #create final burn in array and pass to add symbology function to write
-    dst_array, burnin_meta= reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_lu_burnin_path, lc_clip)
+    # dst_array, burnin_meta = reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_pre_fixforest_path, lc_clip)
+    if not os.path.exists(out_pre_fixforest_path):
+        reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_pre_fixforest_path, lc_clip)
     etime(cf, "Burn in done", st)
     st = time.time()
 
-    #fix forest pixels
-    tmp = reclassVals(dst_array) # call this function
-    dst_array = np.where(tmp > 0, tmp, dst_array) # update your burn in array
-    del tmp
+    # fix forest pixels
+    with rasterio.open(out_pre_fixforest_path, 'r') as burnin_src:
+        burnin_meta = burnin_src.meta
+        dst_array= burnin_src.read(1)
+        tmp, fixForestFlag = fixForest(dst_array, burnin_meta['transform'])
+        if fixForestFlag: # only update if there is data to update
+            dst_array = np.where((tmp > 0)&(dst_array==3100), tmp, dst_array) # update your burn in array
+        del tmp
     etime(cf, "Fix forest pixels done", st)
     st = time.time()
 
@@ -224,12 +245,15 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         os.remove(lc_clip)
     if os.path.exists(tc_clip):
         os.remove(tc_clip)
-    if os.path.exists(tidal_clip):
-        os.remove(tidal_clip)
+    #if os.path.exists(tidal_clip):
+     #   os.remove(tidal_clip)
     if os.path.exists(slr_clip):
         os.remove(slr_clip)
     if os.path.exists(pond_clip):
         os.remove(pond_clip)
+    if int(gdf.loc[gdf['cf'] == cf]['tidal']) ==1:
+        if os.path.exists(tidal_clip):
+            os.remove(tidal_clip)
     
 
     etime(cf, "Total Run ", start)
@@ -257,20 +281,21 @@ def prepTCT(lc_path, tc_path, proj_folder, cf, field_name):
         out_ras = f'{proj_folder}/{cf}/output/{layer}.tif'
         print(out_ras)
 
-        rst = rasterio.open(fn_ras)
-        meta = rst.meta.copy()
-        meta.update(compress='lzw', dtype='uint16')
+        if not os.path.exists(out_ras):
+            rst = rasterio.open(fn_ras)
+            meta = rst.meta.copy()
+            meta.update(compress='lzw', dtype='uint16')
 
-        with rasterio.open(out_ras, 'w+', **meta) as out:
-            out_arr = out.read(1)
+            with rasterio.open(out_ras, 'w+', **meta) as out:
+                out_arr = out.read(1)
 
-            # this is where we create a generator of geom, value pairs to use in rasterizing
-            shapes = ((geom,value) for geom, value in zip(vec_ds.geometry, vec_ds[field_name]))
+                # this is where we create a generator of geom, value pairs to use in rasterizing
+                shapes = ((geom,value) for geom, value in zip(vec_ds.geometry, vec_ds[field_name]))
 
-            tc_ras = features.rasterize(shapes=shapes, fill=0, out=out_arr, transform=out.transform)
-            out.write_band(1, tc_ras)
-        out.close()
-        print(layer, " psegs with tc rasterized")
+                tc_ras = features.rasterize(shapes=shapes, fill=0, out=out_arr, transform=out.transform)
+                out.write_band(1, tc_ras)
+            out.close()
+            print(layer, " psegs with tc rasterized")
 
 
         # factors = [2, 4, 8, 16, 32, 64, 128, 256, 512]
@@ -746,10 +771,11 @@ def reclassBurnFinalStep(lu_ras_path, out_burnin_path, out_lu_burnin_path, lc_cl
                     
                     dst_array= np.where ( (burnin_array > 0), burnin_array, lu_array)
                     dst_array= np.where ( (dst_array==0),  lc_array,  dst_array)
-                    #dst.write(dst_array, 1)        
+                    dst.write(dst_array, 1)        
     
-   #return out_lu_burnin
-    return dst_array, burnin_meta
+    #return out_lu_burnin
+    # return dst_array, burnin_meta
+
 #########################################################################################
 ####################################HELPERS##############################################
 #########################################################################################
@@ -800,72 +826,6 @@ def clipRasByGeom(county_shp, cf, og_path, clip_path):
     with rasterio.open(clip_path, 'w', **out_meta, COMPRESS= 'LZW') as dst:
         dst.write(out_image)
     #return out_image, out_meta
-
-
-#FIX FOREST FUNCTION
-def reclassVals(ary):
-    """
-    Method: reclassVals()
-    Purpose: Find forest speckles that should be TCT or TOA and reclass them as such.
-    Params: ary - burn in ary last step before writing out?
-    Returns: for_zones - array of reclassed forest speckles - NEEDS TO BE ADDED TO ORIGINAL BURN IN ARRAY
-    1. Create zones for forest patches under 100 pixels
-    2. Create zones for TCT + zones from step 1
-        2a. Any zones that overlap step 1 zones are TCT
-    3. Create zones for TOA + zones from step 1
-        3a. Any zones that overlap step 1 zones are TOA
-    """ 
-    s = [[0,1,0],
-        [1,1,1],
-        [0,1,0]]
-    # forest zones under 100 pixels
-    for_zones = label(np.where(ary==3100, 1, 0), structure=s)
-    for_zones = for_zones[0]
-    zones, counts = np.unique(for_zones, return_counts=True)
-    zones = list(zones)
-    counts = list(counts)
-    if 0 in zones:
-        idx = zones.index(0)
-        zones.remove(0)
-        del counts[idx]
-    zones = [zones[z] for z in range(len(zones)) if counts[z] < 100] # forest speckles
-    for_zones = np.where(np.isin(for_zones, zones), for_zones, 0)
-
-    # Remove forest that is correct
-    ary = np.where((ary == 3100)&(for_zones == 0), 0, ary)
-
-    # TCT zones
-    tct_zones = label(np.where(np.isin(ary, [3100, 2240]), 1, 0), structure=s)
-    tct_zones = tct_zones[0]
-    has_tct = list(set(list(np.unique(np.where((tct_zones > 0)&(ary==2240), tct_zones, 0)))))
-    if 0 in has_tct:
-        has_tct.remove(0)
-    tct_zones = list(set(list(np.unique(np.where(np.isin(tct_zones, has_tct)&(for_zones > 0), for_zones, 0)))))
-    if 0 in tct_zones:
-        tct_zones.remove(0)
-
-    # TC in Ag 
-    toa_zones = label(np.where(np.isin(ary,[3100, 3200]), 1, 0), structure=s)
-    toa_zones = toa_zones[0]
-    has_toa = list(set(list(np.unique(np.where((toa_zones > 0)&(ary==3200), toa_zones, 0)))))
-    if 0 in has_toa:
-        has_toa.remove(0)
-    toa_zones = list(set(list(np.unique(np.where(np.isin(toa_zones, has_toa)&(for_zones > 0), for_zones, 0)))))
-    if 0 in toa_zones:
-        toa_zones.remove(0)
-    
-    # update zones array
-    zones_to_remove = list(set(zones) - set(tct_zones+toa_zones)) # forest zones that are not touching tct or toa
-    if 2240 in toa_zones: #if tct value is a toa zone - reclass it
-        max_zone = np.amax(tct_zones+toa_zones)
-        for_zones = np.where(for_zones == 2240, max_zone+1, for_zones)
-    
-    for_zones = np.where(np.isin(for_zones, zones_to_remove), 0, for_zones) # remove forest zones that are not tct or toa
-    for_zones = np.where(np.isin(for_zones, tct_zones), 2240, for_zones)
-    for_zones = np.where(~np.isin(for_zones, [2240,0]), 3200, for_zones)
-
-    return for_zones.astype(np.uint16)
-
 
 def createPyramids(out_lu_burnin_path):
     out_lu_burnin= out_lu_burnin_path
@@ -947,3 +907,132 @@ def createRAT(band, df, vals, counts):
     # set the default Raster Attribute Table for src_ds band 1 to the newly modified rat
     band.SetDefaultRAT(rat)
     return band
+
+
+###################### FIX FOREST SPECKLES FUNCTIONS ####################################
+def fixForest(ary, transform):
+    """
+    Method: fixForest()
+    Purpose: Find forest speckles that should be TCT or TOA and reclass them as such.
+    Params: ary - burn in ary last step before writing out?
+    Returns: for_zones - array of reclassed forest speckles - NEEDS TO BE ADDED TO ORIGINAL BURN IN ARRAY
+    """ 
+    sh = (ary.shape[0], ary.shape[1])
+
+    # get forest zones
+    forest_gdf = vectorizeRaster(np.where(ary == 3100, 1, 0), transform)
+    forest_gdf.loc[:, 'area'] = forest_gdf.geometry.area
+    forest_gdf = forest_gdf[forest_gdf['area'] < 100]
+    forest_gdf = forest_gdf[['zone', 'geometry']]
+
+    if len(forest_gdf) == 0: # no speckles to update - move on
+        return None, False
+
+    # Get TCT zones
+    tct_gdf = vectorizeRaster(np.where(ary == 2240, 1, 0), transform) 
+    tct_list = sjoin_mp6(forest_gdf, 10000, 'intersects', ['zone'], tct_gdf[['geometry']])
+    tct_list = list(tct_list['zone'])
+    del tct_gdf
+
+    # Get TOA zones
+    toa_gdf = vectorizeRaster(np.where(ary == 3200, 1, 0), transform) 
+    toa_list = sjoin_mp6(forest_gdf, 10000, 'intersects', ['zone'], toa_gdf[['geometry']])
+    toa_list = list(toa_list['zone'])
+    del toa_gdf
+
+    # update forest zones with burn
+    forest_gdf.loc[:, 'burn'] = 0
+    if len(tct_list) > 0:
+        forest_gdf.loc[forest_gdf['zone'].isin(tct_list), 'burn'] = 2240
+    if len(toa_list) > 0:
+        forest_gdf.loc[forest_gdf['zone'].isin(toa_list), 'burn'] = 3200
+    forest_gdf = forest_gdf[forest_gdf['burn'] != 0]
+    del tct_list
+    del toa_list
+        
+    if len(forest_gdf) > 0:
+        # Step 3 - rasterize the speckles of forest as tct or toa
+        geoms = [(feature['geometry'],feature['burn']) for idx, feature in forest_gdf.iterrows()]
+        del forest_gdf
+        ary = rasterize(geoms, out_shape=sh, fill=0,  transform=transform, all_touched=False)
+
+        return ary.astype(np.uint16), True
+    else:
+        return None, False
+
+def vectorizeRaster(unique_array, transform):
+    """
+    Method: vectorizeRaster()
+    Purpose: Create polygon geometries for each unique zone in the raster.
+    Params: unique_array - numpy array of zones
+            transform - rasterio transform of array that is to be vectorized
+    Returns: zones_gdf - geodataframe of vectorized raster zones with unique field 'zone'
+    """
+    unique_array = unique_array.astype(np.int16)
+    geoms = []
+    for i, (s, v) in enumerate(shapes(unique_array, mask=unique_array.astype(bool) , connectivity=4, transform=transform)): 
+        geoms.append(Polygon(s['coordinates'][0]))
+    zones_gdf = gpd.GeoDataFrame(geometry=geoms, crs="EPSG:5070")
+    zones_gdf['zone'] = [int(x) for x in range(1, len(zones_gdf)+1)]
+    return zones_gdf
+
+
+def sjoin_mp6(df1, batch_size, sjoin_op, sjoinCols, df2):
+    """
+    Method: sjoin_mp6()
+    Purpose: Chunk and mp a sjoin function on specified geodataframes for specified operation,
+             retaining specified columns.
+    Params: df1 - geodataframe of data to chunk and sjoin (left gdf)
+            batch_size - integer value of max number of records to include in each chunk
+            sjoin_op - string of sjoin operation to use; 'intersects', 'within', 'contains'
+            sjoinCols - list of column names to retain
+            df2 - geodataframe of data to sjoin (right gdf)
+    Returns: sjoinSeg - df (or gdf) of sjoined data, with sjoin columns retained
+    """
+    NUM_CPUS = mp.cpu_count() - 2
+    c = list(df1)
+    df1 = df1.reset_index()
+    df1 = df1[c]
+    if len(df1) == 0:
+        print('df1 is empty')
+ 
+    num_chunks = int(len(df1) / batch_size) + 1
+
+    #make cols a string for now to pass as 4th arg to sjoin
+    tmpCols = ''
+    for s in range(len(sjoinCols)):
+        tmpCols += sjoinCols[s]
+        if s+1 != len(sjoinCols):
+            tmpCols += ' '
+ 
+    chunk_iterator = []
+    for i in range(0, num_chunks):
+        mn, mx = i * batch_size, (i + 1) * batch_size
+        gdf_args = df1[mn:mx], df2, sjoin_op, tmpCols
+        chunk_iterator.append(gdf_args)
+
+    pool = mp.Pool(processes=NUM_CPUS)
+    sj_results = pool.map(sjoin_mp_pt5, chunk_iterator)
+    pool.close()
+    sj_results = pd.concat(sj_results)
+    sj_results.drop_duplicates(inplace=True)
+    return sj_results
+
+def sjoin_mp_pt5(args):
+    """
+    Method: sjoin_mp_pt5()
+    Purpose: Run sjoin on specified geodataframes for specified operation,
+             retaining specified columns.
+    Params: args - tuple of arguments
+                df1 - geodataframe of data to sjoin (left gdf)
+                df2 - geodataframe of data to sjoin (right gdf)
+                sjoin_op - string of sjoin operation to use; 'intersects', 'within', 'contains'
+                sjoinCols - string of column names to retain, separated by a space
+    Returns: sjoinSeg - df (or gdf) of sjoined data, with sjoin columns retained
+    """
+    df1, df2, sjoin_op, sjoinCols = args 
+    cols = sjoinCols.split(' ') #list of column names to keep
+    sjoinSeg = gpd.sjoin(df1, df2, op=sjoin_op)
+    sjoinSeg = sjoinSeg[cols]
+    sjoinSeg.drop_duplicates(inplace=True)
+    return sjoinSeg

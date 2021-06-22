@@ -55,8 +55,7 @@ def checkFile(fPath): # used for all anci data
     else:
         pass
 
-def county_check(cf):
-    
+def checkCounty(cf):
     for k,v in luconfig.anci_dict.items():
         checkFile(Path(luconfig.anci_folder, v))
     print('--Ancillary data check: COMPLETE')
@@ -227,6 +226,9 @@ def rasFinder(dir, pattern):
 
     return foundRas
 
+def memCheck():
+    print(psutil.virtual_memory())
+
 def generate_TA_dict(cf):
 
     anci_folder = luconfig.anci_folder
@@ -284,7 +286,7 @@ def generate_TA_dict(cf):
         }
     luz_sid = {
         'name' : "Local Use or Zoning",
-        'colname' : 's_luz',
+        'colname' : 's_luz_',
         'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
         'tabPath' : f'{folder}/{cf}/temp/luz_sid_ta.dbf',
         'zone': 'SID',
@@ -292,7 +294,7 @@ def generate_TA_dict(cf):
         }
     luz_pid = {
         'name' : "Local Use or Zoning",
-        'colname' : 'p_luz',
+        'colname' : 'p_luz_',
         'path': f'{folder}/{cf}/input/cbp_lu_mask.tif',
         'tabPath' : f'{folder}/{cf}/temp/luz_pid_ta.dbf',
         'zone': 'PID',
