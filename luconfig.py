@@ -1,5 +1,5 @@
 anci_folder = r"B:/ancillary"
-folder = f'B:/landuse/version1'
+folder = f'/home/azureuser/azData/version1/'
 batch_size = 10000 # used in landuse_rev2 and TC_LU_Submodule_v1
 batch_log_Path = f"{folder}/batch_log.txt"
 crosswalk_csv = r'C:/scripts/landuse/lu_change/P6RollUpLUCrosswalk.csv' 
