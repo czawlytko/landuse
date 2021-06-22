@@ -708,16 +708,14 @@ def tabArea(src, geom, noData, rasVals):
         counts = list(counts)
         if noData in vals:
             i = vals.index(noData)
-            vals.remove(noData) #update to ignore no data value -- 255 hard-coded for NLCD
+            vals.remove(noData) #update to ignore no data value
             del counts[i]
         finVals = [0 for x in range(len(rasVals))] #empty list with same length as unique raster values
         if len(vals) > 0:
             for idx, v in enumerate(vals): #for each class found within the catchment
                 if int(v) in rasVals:
                     finVals[rasVals.index(int(v))] = counts[idx] #set count of unique class in same order as the unique raster values
-            return  finVals #returns list of counts
-        else:
-            return [-1] * len(rasVals)
+        return finVals #returns list of counts
     except:
         return [-1] * len(rasVals)
 

@@ -148,11 +148,13 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
     lvb_gdf.loc[:, 'zone'] = [int(x) for x in range(max_zone, len(lvb_gdf)+max_zone)]
     #order lc_change_gdf and lvb_gdf columns the same
     lvb_gdf = lvb_gdf[['zone', 'PID', 'TYPE', 'geometry']]
-    lvb_gdf.loc[:, 'Method'] = 'New Structure - Parcel'
-    lvb_gdf.loc[:, 'T2_LU_Val'] = lch.get_lu_code('Turf Herbaceous', False)
-    lvb_gdf.loc[:, 'T1_LU_Code'] = 0
-    #add new vectors to table and give it T1_LU_Code
-    lc_change_gdf = lc_change_gdf.append(lvb_gdf)
+    if len(lvb_gdf) > 0:
+        lvb_gdf.loc[:, 'Method'] = 'New Structure - Parcel'
+        lvb_gdf.loc[:, 'T2_LU_Val'] = lch.get_lu_code('Turf Herbaceous', False)
+        lvb_gdf.loc[:, 'T1_LU_Code'] = 0
+        #add new vectors to table and give it T1_LU_Code
+        lc_change_gdf = lc_change_gdf.append(lvb_gdf)
+        
     del lvb_gdf
 
     # Group newly developed parcels to find new neighborhoods that should be back-casted the same
