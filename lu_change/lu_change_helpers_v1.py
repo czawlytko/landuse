@@ -719,7 +719,6 @@ def tabArea(src, geom, noData, rasVals):
         else:
             return [-1] * len(rasVals)
     except:
-        print("Could Not Mask Raster -- Check Projections of Files - exiting")
         return [-1] * len(rasVals)
 
 def zonal_stats(src, geom, statType, noData, isT2LU, isLCChange): #delete is T2LU
@@ -836,14 +835,17 @@ def maskRasByGeom(args):
     with rio.open(rasPath) as src_co:
         with rio.open(rasPath2) as src_co2:
             for id_field, geom in geoms:
-                out_image, out_transform = rio.mask.mask(src_co, [geom], crop=True)
-                out_image2, out_transform2 = rio.mask.mask(src_co2, [geom], crop=True)
-                out_image = np.where(np.isin(out_image, vals), 1, 0)
-                out_image = np.where(out_image2 == turf_val, 1, 0) # where T1 LC is LVB and T2 LU is TG
-                gdf = vectorizeRaster(out_image, out_transform)
-                for idx, row in gdf.iterrows():
-                    geom_list.append(row['geometry'])
-                    id_list.append(id_field)
+                try: #smm added 6/18/21
+                    out_image, out_transform = rio.mask.mask(src_co, [geom], crop=True)
+                    out_image2, out_transform2 = rio.mask.mask(src_co2, [geom], crop=True)
+                    out_image = np.where(np.isin(out_image, vals), 1, 0)
+                    out_image = np.where(out_image2 == turf_val, 1, 0) # where T1 LC is LVB and T2 LU is TG
+                    gdf = vectorizeRaster(out_image, out_transform)
+                    for idx, row in gdf.iterrows():
+                        geom_list.append(row['geometry'])
+                        id_list.append(id_field)
+                except:
+                    continue
     gdf = gpd.GeoDataFrame(data={'PID':id_list}, geometry=geom_list, crs="EPSG:5070")
     return gdf
 
@@ -896,11 +898,14 @@ def maskRasByGeom2(args):
     geom_list = []
     with rio.open(rasPath) as src_co:
         for geom in geoms:
-            out_image, out_transform = rio.mask.mask(src_co, [geom], crop=True)
-            out_image = np.where(np.isin(out_image, vals), 1, 0)
-            gdf = vectorizeRaster(out_image, out_transform)
-            for idx, row in gdf.iterrows():
-                geom_list.append(row['geometry'])
+            try: #smm added 6/18/21
+                out_image, out_transform = rio.mask.mask(src_co, [geom], crop=True)
+                out_image = np.where(np.isin(out_image, vals), 1, 0)
+                gdf = vectorizeRaster(out_image, out_transform)
+                for idx, row in gdf.iterrows():
+                    geom_list.append(row['geometry'])
+            except:
+                continue
     gdf = gpd.GeoDataFrame(geometry=geom_list, crs="EPSG:5070")
     return gdf
 
@@ -1071,7 +1076,12 @@ def indirectTC(tree_canopy_gdf, psegs, lu_change_gdf):
     Returns: lu_change_gdf - updated lu change 
     """
     if len(tree_canopy_gdf) > 0:
-        forest_patches = tree_canopy_gdf[(tree_canopy_gdf['g_area'] >= 4047)&(~tree_canopy_gdf['GID'].isna())].dissolve(by='GID')
+        try: # smm added 6/18/21 - put 1st line in try and added except lines
+            forest_patches = tree_canopy_gdf[(tree_canopy_gdf['g_area'] >= 4047)&(~tree_canopy_gdf['GID'].isna())].dissolve(by='GID')
+        except:
+            forest_patches = tree_canopy_gdf[(tree_canopy_gdf['g_area'] >= 4047)&(~tree_canopy_gdf['GID'].isna())]
+            forest_patches['geometry'] = forest_patches.geometry.buffer(0.0)
+            forest_patches = forest_patches.dissolve(by='GID')
         forest_patches = forest_patches.reset_index().explode()[['GID', 'geometry']]
         tmp = tree_canopy_gdf[(tree_canopy_gdf['g_area'] >= 4047)&(tree_canopy_gdf['GID'].isna())].explode()[['zone', 'geometry']]
         max_gid = int(np.nanmax(lu_change_gdf['GID'])) + 1
