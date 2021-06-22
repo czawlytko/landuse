@@ -88,7 +88,7 @@ if __name__ == "__main__":
         # TREE CANOPY
         ## TILES
         if not os.path.isfile(f'{luconfig.folder}/{cf}/output/trees_over.gpkg'):
-            if not os.path.isfile(f'{luconfig.folder}/{cf}/temp/{cf}_tiles.shp'):
+            if not os.path.isfile(f'{luconfig.folder}/{cf}/temp/tc_tiles.shp'):
                 print("Creating tiles...")
                 tc_st = time.time()
                 try:
