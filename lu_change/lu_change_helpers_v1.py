@@ -708,7 +708,7 @@ def tabArea(src, geom, noData, rasVals):
         counts = list(counts)
         if noData in vals:
             i = vals.index(noData)
-            vals.remove(noData) #update to ignore no data value -- 255 hard-coded for NLCD
+            vals.remove(noData) #update to ignore no data value
             del counts[i]
         finVals = [0 for x in range(len(rasVals))] #empty list with same length as unique raster values
         if len(vals) > 0:
