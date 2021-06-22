@@ -154,6 +154,7 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
         lvb_gdf.loc[:, 'T1_LU_Code'] = 0
         #add new vectors to table and give it T1_LU_Code
         lc_change_gdf = lc_change_gdf.append(lvb_gdf)
+        
     del lvb_gdf
 
     # Group newly developed parcels to find new neighborhoods that should be back-casted the same
