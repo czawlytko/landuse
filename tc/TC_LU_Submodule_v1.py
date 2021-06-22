@@ -150,7 +150,8 @@ def run_trees_over_submodule(NUM_CPUS, cf):
 
     #pull processors
     print("\n")
-    pool = NoDaemonContext(NUM_TILES) #Make non daemon threads to call mp functions from threads
+    # pool = NoDaemonContext(NUM_TILES) #Make non daemon threads to call mp functions from threads
+    pool = mp.pool(NUM_TILES)
     data = pool.map(runTCT, chunk_iterator)
     pool.close()
     pool.join()
