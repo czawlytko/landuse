@@ -1,4 +1,4 @@
-anci_folder = r"B:/ancillary"
+anci_folder = f'/home/azureuser/azData/ancillary-v1/'
 folder = f'/home/azureuser/azData/version1/'
 batch_size = 10000 # used in landuse_rev2 and TC_LU_Submodule_v1
 batch_log_Path = f"{folder}/batch_log.txt"
