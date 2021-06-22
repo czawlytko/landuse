@@ -627,14 +627,23 @@ def run_lu_change(cf, lu_type):
 
     # Rasterize T1 LU and mask by LC change
     classes_not_in_change = ['Tree Canopy to Tree Canopy', 'Tree Canopy to Tree Canopy NS']
-    shapes = [ (row['geometry'], row['T1_LU_Code']) for idx, row in lc_change_gdf[(lc_change_gdf['Method'] == 'New Structure - Parcel')|(lc_change_gdf['LC_Change'].isin(classes_not_in_change))].iterrows()]
     sh = (lc_change_ary.shape[1], lc_change_ary.shape[2])
-    t1lu_ary = rasterize(shapes, out_shape=sh, fill=0,  transform=lc_change_meta['transform'], all_touched=False)
+    shapes = [ (row['geometry'], row['T1_LU_Code']) for idx, row in lc_change_gdf[(lc_change_gdf['Method'] == 'New Structure - Parcel')|(lc_change_gdf['LC_Change'].isin(classes_not_in_change))].iterrows()]
+    if len(shapes) > 0:
+        t1lu_ary = rasterize(shapes, out_shape=sh, fill=0,  transform=lc_change_meta['transform'], all_touched=False)
+    else:
+        etime(cf, 'No TC to TC or NS Parcel to rasterize', st)
     shapes = [ (row['geometry'], row['T1_LU_Code']) for idx, row in lc_change_gdf[lc_change_gdf['Method'] != 'New Structure - Parcel'].iterrows()]
-    ns_p_ary = rasterize(shapes, out_shape=sh, fill=0,  transform=lc_change_meta['transform'], all_touched=False)
-    t1lu_ary = np.where(lc_change_ary > 0, ns_p_ary, t1lu_ary)
-    del lc_change_ary
-    del ns_p_ary
+    if len(shapes) > 0:
+        ns_p_ary = rasterize(shapes, out_shape=sh, fill=0,  transform=lc_change_meta['transform'], all_touched=False)
+        try:
+            t1lu_ary = np.where(lc_change_ary > 0, ns_p_ary, t1lu_ary)
+            etime(cf, 'Adding other change to TC to TC and NS Parcel - raster', st)
+        except:
+            t1lu_ary = ns_p_ary.copy()
+            etime(cf, 'No TC to TC or NS Parcel - skipping where', st)
+        del ns_p_ar
+    del lc_change_aryy
     lc_change_meta.update({'nodata':0,
                             'dtype':'uint16'})
     with rio.open(os.path.join(temp_path, f"{cf}_T1_LU_{lu_type}.tif"), 'w', **lc_change_meta, compress="LZW") as dataset:
