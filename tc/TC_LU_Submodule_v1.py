@@ -150,7 +150,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
 
     #pull processors
     print("\n")
-    pool = MyPool(NUM_TILES) #Make non daemon threads to call mp functions from threads
+    pool = NoDaemonContext(NUM_TILES) #Make non daemon threads to call mp functions from threads
     data = pool.map(runTCT, chunk_iterator)
     pool.close()
     pool.join()
@@ -234,7 +234,6 @@ Got these from: https://stackoverflow.com/questions/6974695/python-process-pool-
 # class MyPool(mp.pool.Pool):
 #     freeze_support()
 #     Process = NoDaemonProcess
-
 
 class NoDaemonProcess(mp.Process):
     @property
