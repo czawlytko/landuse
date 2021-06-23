@@ -643,7 +643,7 @@ def run_lu_change(cf, lu_type):
             t1lu_ary = ns_p_ary.copy()
             etime(cf, 'No TC to TC or NS Parcel - skipping where', st)
         del ns_p_ary
-    del lc_change_aryy
+    del lc_change_ary
     lc_change_meta.update({'nodata':0,
                             'dtype':'uint16'})
     with rio.open(os.path.join(temp_path, f"{cf}_T1_LU_{lu_type}.tif"), 'w', **lc_change_meta, compress="LZW") as dataset:
