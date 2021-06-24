@@ -372,17 +372,19 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     all_forest = all_forest[~all_forest['zone'].isin(list(lc_change_gdf['zone']))] #get t1_tc patches touching tc change
     if len(all_forest) > 0:
         all_forest.loc[~all_forest['g_area_y'].isna(), 'g_area_x'] = all_forest['g_area_y'] # where there is group area - use it - otherwise keep seg area
-        all_forest = all_forest[['zone', 'GID', 'Method', 'LC_Change', 'g_area_x', 'geometry']]
+        all_forest = all_forest[['zone', 'GID', 'g_area_x', 'geometry']]
         all_forest = all_forest.rename(columns={'g_area_x':'g_area'})
         all_forest = all_forest[all_forest['g_area'] >= 4047]
-        all_forest.loc[:, 'Method'] = 'Indirect - T1 TC'
-        all_forest.loc[:, 'LC_Change'] = 'Tree Canopy to Tree Canopy'
-        all_forest.loc[:, 'T1_LU_Code'] = 0
-        all_forest.loc[:, 'T1LC'] = 'Tree Canopy'
-        lc_change_gdf = lc_change_gdf.append(all_forest[['zone', 'g_area', 'GID', 'Method', 'LC_Change', 'T1_LU_Code', 'T1LC', 'geometry']]) # add T1 TC touching tc change
-        print(lc_change_gdf.head())
-        cols = list(lc_change_gdf)
-        lc_change_gdf = lc_change_gdf.reset_index()[cols]
+        
+        if len(all_forest)>0:
+            all_forest.loc[:, 'Method'] = 'Indirect - T1 TC'
+            all_forest.loc[:, 'LC_Change'] = 'Tree Canopy to Tree Canopy'
+            all_forest.loc[:, 'T1_LU_Code'] = 0
+            all_forest.loc[:, 'T1LC'] = 'Tree Canopy'
+            lc_change_gdf = lc_change_gdf.append(all_forest[['zone', 'g_area', 'GID', 'Method', 'LC_Change', 'T1_LU_Code', 'T1LC', 'geometry']]) # add T1 TC touching tc change
+            print(lc_change_gdf.head())
+            cols = list(lc_change_gdf)
+            lc_change_gdf = lc_change_gdf.reset_index()[cols]
     # lc_change_gdf = lc_change_gdf[[cols]].reset_index() # labeebs suggestion to try, should do the same thing as above; passing list of list of list? smm thinks this will break, and this adds index column that I don't want
 
     lc_change_gdf.loc[(lc_change_gdf['zone'].isin(rem_zones))&(lc_change_gdf['T1LC'] == 'Tree Canopy')&(lc_change_gdf['g_area'].isna()), 'g_area'] = lc_change_gdf.geometry.area
