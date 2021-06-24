@@ -19,7 +19,6 @@ def createTiles(cf, psegs):
             psegs - gdf of county psegs
     Returns: N/A
     """
-    counties = f'{config.anci_folder}/census/BayCounties20m_project.shp'
     test_gpkg = f'{config.folder}/{cf}/output/data.gpkg'
     grid_p = f'{config.folder}/{cf}/temp/tc_tiles.shp'
 
@@ -31,18 +30,13 @@ def createTiles(cf, psegs):
         tiles.loc[:, 'cnt'] = [len(psegs)]
         tiles[['id', 'cnt', 'geometry']].to_file(grid_p)
     else: # county needs multiple tiles
-        cnty_gdf = gpd.read_file(counties, crs="EPSG:5070")[['GEOID', 'geometry']]
-        cnty_gdf.crs = "EPSG:5070"
-
-        fips = cf.split('_')[1]
-        
         # Create spatial index
         psegs_sidx = psegs.sindex
+        start_bnds = psegs.total_bounds
         del psegs
 
         #Create starter grid - START WITH BIG TILES
-        cnty = cnty_gdf[cnty_gdf['GEOID'] == fips]
-        grid = createBaseGrid(cnty.total_bounds, 75)
+        grid = createBaseGrid(start_bnds, 75)
 
         #For each tile in grid - get intersection of psegs idx - this needs to be done each time a tile size changes
         hits_list = []
