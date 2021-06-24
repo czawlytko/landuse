@@ -892,7 +892,7 @@ def createRAT(band, df, vals, counts):
     # Create columns you want in RAT
     rat = gdal.RasterAttributeTable()
     rat.CreateColumn("Value", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
-    rat.CreateColumn("Count", gdalconst.GFT_Integer, gdalconst.GFU_PixelCount)
+    #rat.CreateColumn("Count", gdalconst.GFT_Integer, gdalconst.GFU_PixelCount)
     rat.CreateColumn("Red", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
     rat.CreateColumn("Green", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
     rat.CreateColumn("Blue", gdalconst.GFT_Integer, gdalconst.GFU_MinMax)
@@ -903,11 +903,11 @@ def createRAT(band, df, vals, counts):
     for idx, row in df.iterrows():
         if row['Value'] in vals:
             rat.SetValueAsInt(ct, 0, int(row['Value']))
-            rat.SetValueAsInt(ct, 1, int(counts[vals.index(row['Value'])]))
-            rat.SetValueAsInt(ct, 2, int(row['Red']))
-            rat.SetValueAsInt(ct, 3, int(row['Green']))
-            rat.SetValueAsInt(ct, 4, int(row['Blue']))
-            rat.SetValueAsString(ct, 5, row['LandUse'])
+            #rat.SetValueAsInt(ct, 1, int(counts[vals.index(row['Value'])]))
+            rat.SetValueAsInt(ct, 1, int(row['Red']))
+            rat.SetValueAsInt(ct, 2, int(row['Green']))
+            rat.SetValueAsInt(ct, 3, int(row['Blue']))
+            rat.SetValueAsString(ct, 4, row['LandUse'])
             ct += 1
         
     # set the default Raster Attribute Table for src_ds band 1 to the newly modified rat
