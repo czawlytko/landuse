@@ -150,8 +150,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
 
     #pull processors
     print("\n")
-    # pool = NoDaemonContext(NUM_TILES) #Make non daemon threads to call mp functions from threads
-    pool = mp.Pool(processes=NUM_TILES)
+    pool = MyPool(NUM_TILES) #Make non daemon threads to call mp functions from threads
     data = pool.map(runTCT, chunk_iterator)
     pool.close()
     pool.join()
@@ -222,38 +221,19 @@ def run_trees_over_submodule(NUM_CPUS, cf):
 """
 Got these from: https://stackoverflow.com/questions/6974695/python-process-pool-non-daemonic
 """
-# class NoDaemonProcess(mp.Process):
-#     # make 'daemon' attribute always return False
-#     def _get_daemon(self):
-#         return False
-#     def _set_daemon(self, value):
-#         pass
-#     daemon = property(_get_daemon, _set_daemon)
-
-# # We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
-# # because the latter is only a wrapper function, not a proper class.
-# class MyPool(mp.pool.Pool):
-#     freeze_support()
-#     Process = NoDaemonProcess
-
 class NoDaemonProcess(mp.Process):
-    @property
-    def daemon(self):
+    # make 'daemon' attribute always return False
+    def _get_daemon(self):
         return False
-
-    @daemon.setter
-    def daemon(self, value):
+    def _set_daemon(self, value):
         pass
-
-class NoDaemonContext(type(mp.get_context())):
-    Process = NoDaemonProcess
+    daemon = property(_get_daemon, _set_daemon)
 
 # We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
 # because the latter is only a wrapper function, not a proper class.
-class NestablePool(mp.pool.Pool):
-    def __init__(self, *args, **kwargs):
-        kwargs['context'] = NoDaemonContext()
-        super(NestablePool, self).__init__(*args, **kwargs)
+class MyPool(mp.pool.Pool):
+    freeze_support()
+    Process = NoDaemonProcess
 
 #########################################################################################
 #################################RUN WORKFLOWS###########################################
