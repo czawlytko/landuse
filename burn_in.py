@@ -123,6 +123,11 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
     #prep wetlands, whether nontidal or tidal
     gdf=gpd.read_file(tidal_lookup)
+    # if intersect tagged a county as tidal but the tidal gpkg does not exist - set as nontidal
+    if int(gdf.loc[gdf['cf'] == cf]['tidal']) == 1 and not os.path.isfile(tidal_path):
+        gdf.loc[gdf['cf'] == cf, 'tidal'] = 0
+        etime(cf, "tagged as tidal but no gpkg exists - treating as nontidal", st)
+        st = time.time()
 
     if int(gdf.loc[gdf['cf'] == cf]['tidal']) == 0:
         print(cf, " is a nontidal county. Running nontidal prep only")
@@ -345,7 +350,8 @@ def prepPonds(lc_path, pond_path, pond_ras_path, field_name):
     #rasval_code = 'w_type_code'
 
     #ponds
-    vec_ds[field_name] = 1
+    vec_ds.loc[vec_ds[field_name] == 1] #select only the 1s
+    #vec_ds[field_name] = 1
     
     vec_ds[field_name] = vec_ds[field_name].astype('int16')
 
