@@ -717,7 +717,7 @@ def tabArea(src, geom, noData, rasVals):
                     finVals[rasVals.index(int(v))] = counts[idx] #set count of unique class in same order as the unique raster values
         return finVals #returns list of counts
     except:
-        return [-1] * len(rasVals)
+        return [0] * len(rasVals)
 
 def zonal_stats(src, geom, statType, noData, isT2LU, isLCChange): #delete is T2LU
     """

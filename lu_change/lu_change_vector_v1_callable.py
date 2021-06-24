@@ -142,13 +142,13 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
         ]
     # vectorized LVB in parcels that are newly developed - with pid
     lvb_gdf = lch.maskRasByGeom_mp(lc_change_ras_path, lu_2017_ras_path, parcels, lvb) # vector of LVB in newly dev parcels who are TG in T2
-    lvb_gdf = lvb_gdf[['PID', 'geometry']]
-    lvb_gdf = lvb_gdf.merge(tab_area_df[['PID','TYPE', 'Type_log']], on='PID', how='left')
-    max_zone = np.amax(lc_change_gdf['zone']+1)
-    lvb_gdf.loc[:, 'zone'] = [int(x) for x in range(max_zone, len(lvb_gdf)+max_zone)]
-    #order lc_change_gdf and lvb_gdf columns the same
-    lvb_gdf = lvb_gdf[['zone', 'PID', 'TYPE', 'geometry']]
     if len(lvb_gdf) > 0:
+        lvb_gdf = lvb_gdf[['PID', 'geometry']]
+        lvb_gdf = lvb_gdf.merge(tab_area_df[['PID','TYPE', 'Type_log']], on='PID', how='left')
+        #order lc_change_gdf and lvb_gdf columns the same
+        max_zone = np.amax(lc_change_gdf['zone']+1)
+        lvb_gdf.loc[:, 'zone'] = [int(x) for x in range(max_zone, len(lvb_gdf)+max_zone)]
+        lvb_gdf = lvb_gdf[['zone', 'PID', 'TYPE', 'geometry']]
         lvb_gdf.loc[:, 'Method'] = 'New Structure - Parcel'
         lvb_gdf.loc[:, 'T2_LU_Val'] = lch.get_lu_code('Turf Herbaceous', False)
         lvb_gdf.loc[:, 'T1_LU_Code'] = 0
@@ -366,20 +366,20 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     groups = groups.merge(all_forest[['zone', 'g_area']], on='zone', how='left')
     group_area = groups[['GID', 'g_area']].groupby(['GID']).agg('sum').reset_index()
     groups = groups[['zone', 'GID']].merge(group_area, on='GID')
+    lc_change_gdf = lc_change_gdf.merge(groups, on='zone', how='left') # add group area
+
     all_forest = all_forest.merge(groups[['zone', 'GID', 'g_area']], on='zone', how='right')
     all_forest = all_forest[~all_forest['zone'].isin(list(lc_change_gdf['zone']))] #get t1_tc patches touching tc change
-    all_forest.loc[:, 'Method'] = 'Indirect - T1 TC'
-    all_forest.loc[:, 'LC_Change'] = 'Tree Canopy to Tree Canopy'
-    all_forest.loc[~all_forest['g_area_y'].isna(), 'g_area_x'] = all_forest['g_area_y'] # where there is group area - use it - otherwise keep seg area
-    all_forest = all_forest[['zone', 'GID', 'Method', 'LC_Change', 'g_area_x', 'geometry']]
-    all_forest = all_forest.rename(columns={'g_area_x':'g_area'})
-    all_forest = all_forest[all_forest['g_area'] >= 4047]
-    lc_change_gdf = lc_change_gdf.merge(groups, on='zone', how='left') # add group area
     if len(all_forest) > 0:
+        all_forest.loc[~all_forest['g_area_y'].isna(), 'g_area_x'] = all_forest['g_area_y'] # where there is group area - use it - otherwise keep seg area
+        all_forest = all_forest[['zone', 'GID', 'Method', 'LC_Change', 'g_area_x', 'geometry']]
+        all_forest = all_forest.rename(columns={'g_area_x':'g_area'})
+        all_forest = all_forest[all_forest['g_area'] >= 4047]
+        all_forest.loc[:, 'Method'] = 'Indirect - T1 TC'
+        all_forest.loc[:, 'LC_Change'] = 'Tree Canopy to Tree Canopy'
         all_forest.loc[:, 'T1_LU_Code'] = 0
         all_forest.loc[:, 'T1LC'] = 'Tree Canopy'
         lc_change_gdf = lc_change_gdf.append(all_forest[['zone', 'g_area', 'GID', 'Method', 'LC_Change', 'T1_LU_Code', 'T1LC', 'geometry']]) # add T1 TC touching tc change
-    
         print(lc_change_gdf.head())
         cols = list(lc_change_gdf)
         lc_change_gdf = lc_change_gdf.reset_index()[cols]
@@ -647,7 +647,10 @@ def run_lu_change(cf, lu_type):
     lc_change_meta.update({'nodata':0,
                             'dtype':'uint16'})
     with rio.open(os.path.join(temp_path, f"{cf}_T1_LU_{lu_type}.tif"), 'w', **lc_change_meta, compress="LZW") as dataset:
-        dataset.write(t1lu_ary)
+        try:
+            dataset.write(t1lu_ary)
+        except:
+            dataset.write(t1lu_ary, 1)
 
     etime(cf, 'Rasterize T1 LU and wrote to TIFF', st)
     st = time.time()

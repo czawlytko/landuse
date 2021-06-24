@@ -875,24 +875,23 @@ def RUN(cf, test):
         timberPath = Path(anci_folder, anci_dict['MDtimberPath']) 
 
     ###  ACTION ********************************************************
-    try:
-        psread_st = time.time()
-        print(f"Start reading psegs {time.asctime()}")
-        psegs = gpd.read_file(psegsPath, layer=inLayer, driver='GPKG')
-        etime(cf, psegs,  f"psegs read in", psread_st)
-        print("psegs dtypes: \n", psegs.dtypes)
-        # for layername in fiona.listlayers(psegsPath):
-        #     with fiona.open(psegsPath, layer=layername) as src:
-        #         print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
+    # try:
+    psread_st = time.time()
+    print(f"Start reading psegs {time.asctime()}")
+    print(psegsPath)
+    print(inLayer)
+    psegs = gpd.read_file(psegsPath, layer=inLayer, driver='GPKG')
+    etime(cf, psegs,  f"psegs read in", psread_st)
+    print("psegs dtypes: \n", psegs.dtypes)
 
-    except:
-        print("ERROR! psegsPath failed to read...")
-        print(f'--psegsPath: {psegsPath}')
-        for layername in fiona.listlayers(psegsPath):
-            with fiona.open(psegsPath, layer=layername) as src:
-                print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
-        return -1, 'psegs failed to read'
-        sys.exit()
+    # except:
+    #     print("ERROR! psegsPath failed to read...")
+    #     print(f'--psegsPath: {psegsPath}')
+    #     for layername in fiona.listlayers(psegsPath):
+    #         with fiona.open(psegsPath, layer=layername) as src:
+    #             print(f"--layer name : {layername} \n--rows: {len(src)}\n--schema: {src.schema}\n")
+    #     return -1, 'psegs failed to read'
+    #     sys.exit()
 
     joinColumns = ['p_area', 's_area', 'p_lc_1', 'p_lc_3', 'p_lc_4', 'p_lc_5', 'p_lc_6', 'p_lc_7', 'p_lc_8', 'p_lc_9', 'p_lc_10', 'p_lc_11', 'p_lc_12',
         's_c18_0', 'p_c18_0', 's_c1719_0', 's_n16_0', 'p_luz','s_luz']
@@ -909,8 +908,13 @@ def RUN(cf, test):
 
     for col in joinColumns:
         if col not in psegs.columns:
-            print(f"Required columns still missing.\npseg cols:{psegs.columns}\nRequired joined cols: {joinedColumns}")
-            sys.exit()
+            if '_lc_' in col: 
+                val = col.split('_')[-1]
+                print(f"Missing land cover class {val}; adding column of 0")
+                psegs.loc[:, col] = 0
+            else:
+                print(f"Required columns still missing.\npseg cols:{psegs.columns}\nRequired joined cols: {col}")
+                sys.exit()
 
     psegs = datacheck(cf, psegs, folder)
 

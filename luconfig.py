@@ -1,15 +1,15 @@
-anci_folder = f'/home/azureuser/azData/ancillary-v1/'
-folder = f'/home/azureuser/azData/version1/'
+anci_folder = f'P:/ancillary'
+folder = f'P:/version1'
 batch_size = 10000 # used in landuse_rev2 and TC_LU_Submodule_v1
 batch_log_Path = f"{folder}/batch_log.txt"
 crosswalk_csv = r'lu_change/P6RollUpLUCrosswalk.csv' 
 lu_change_csv = r'lu_change/p6lu_change_all_classes.csv'
 TC_Tile_Min = 150000 # thresholds for minimum number of psegs required to generate tiles
 TC_Tile_Max = 500000
-TC_CPUS = 15 # number of cores to be used to help divide total core count and balance processes.
+TC_CPUS = 9 # number of cores to be used to help divide total core count and balance processes.
 
 dest  = f""
-test = True
+test = False
 
 anci_dict = {
     'landfillPath' : r"20172018_Landfills/CBW_digitized_landfills_2017_2018_20210517.shp", # updated 4/26/21

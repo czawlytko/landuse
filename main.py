@@ -115,7 +115,7 @@ if __name__ == "__main__":
             if burnin_flag == -1:
                 print("Burn in Submodule incomplete; Check log for error")
                 sys.exit()
-        if os.path.isfile(f"{folder}/{cf}/output/{cf}_lu_2017_2018.tif"):
+        else: #os.path.isfile(f"{folder}/{cf}/output/{cf}_lu_2017_2018.tif"):
             print('\nBurn in already complete')
             burnin_flag = 0
 
