@@ -119,11 +119,19 @@ def joinData(cf, psegs, remove_columns):
     missing_TA = []
 
 
+    missingLUZ_p, missingLUZ_s = False, False
+
     for dname, tadict in TA_dict.items():
         tabPath = tadict['tabPath']
         if not os.path.isfile(tabPath):
-            missing_TA.append(tabPath)
             print(f"TA MISSING FILE: {tabPath}")
+            if dname != 'luz_pid' and dname != 'luz_sid':
+                missing_TA.append(tabPath)
+            elif dname == 'luz_pid':
+                missingLUZ_p = True
+            else:
+                missingLUZ_s = True
+
     if len(missing_TA) > 0:
         print(f'ERROR! Missing TA files! Exiting...\n {missing_TA}')
 
@@ -159,12 +167,55 @@ def joinData(cf, psegs, remove_columns):
                     if col in luconfig.LUZ_values:
                         vcols.append(col)
 
+                if len(vcols) == 0:
+                    checkCBP = []
+                    for col in tabledf.columns:
+                        if 'VALUE' in col:
+                            checkCBP.append(col)
+                    if len(checkCBP) > 0: # the LUZ mask used VALUE_#, check CBP mask RAT for # to LUZ name relationship
+                        cbp_dbf_paths = [f'{folder}/{cf}/input/cbp_lu_mask.tif.vat.dbf',
+                        f'{folder}/{cf}/input/cbp_lu_mask.tif.dbf',
+                        f'{folder}/{cf}/input/cbp_lu_mask.vat.dbf',
+                        f'{folder}/{cf}/input/cbp_lu_mask.dbf'
+                        ]
+                        cbp_dbf_path=r''
+                        for p in cbp_dbf_paths:
+                            if os.path.isfile(p):
+                                cbp_dbf_path = p
+                        print('mask file path:', cbp_dbf_path)
+
+                        if os.path.isfile(cbp_dbf_path):
+                            cbp_rat = gpd.read_file(cbp_dbf_path)
+                            if 'CBP_mask' not in cbp_rat.columns:
+                                for col in cbp_rat.columns:
+                                    if 'mask' in col.lower():
+                                        cbp_rat = cbp_rat.rename(columns={col:'CBP_mask'})
+                            if 'CBP_mask' not in cbp_rat.columns:
+                                t_cols = cbp_rat.columns
+                                rem_cols = ['Value', 'Count', 'geometry']
+                                t_cols = [x for x in t_cols if x not in rem_cols]
+                                if len(t_cols) == 1:
+                                    cbp_rat = cbp_rat.rename(columns={t_cols[0]:'CBP_mask'})
+                            if 'CBP_mask' not in cbp_rat.columns:
+                                print("LUZ table has VALUE_# cols and CBP mask does not have mask column in vat")
+                                sys.exit(0)
+                            for old_name in checkCBP:
+                                val = int(old_name.split('_')[-1]) # get the #
+                                if val in list(cbp_rat['Value']):
+                                    lu_name = list(cbp_rat[cbp_rat['Value']==val]['CBP_mask'])[0]
+                                    if lu_name == None:
+                                        lu_name = 'no_luz'
+                                    else:
+                                        lu_name = lu_name.upper()
+                                    if lu_name in luconfig.LUZ_values:
+                                        vcols.append(lu_name)
+                                        tabledf = tabledf.rename(columns={old_name:lu_name})
+                                        print(f"renamed {old_name} to {lu_name} using CBP mask dbf")
+
                 # Get max LUZ value
                 print(f"kept value columns: {vcols}")
                 new_col_name = f'{zoneID[0].lower()}_{dname.split("_")[0]}' # make p_luz or s_luz
                 tabledf[new_col_name] = tabledf[vcols].idxmax(axis=1)
-
-                print(tabledf.columns)
                 for drop_col in vcols:
                     tabledf = tabledf.drop(drop_col, axis=1)
 
@@ -194,9 +245,14 @@ def joinData(cf, psegs, remove_columns):
 
 
         else:
-            print(f"bad file path {tabPath}")
-            # pass
-            sys.exit()
+            if dname == 'luz_sid' and missingLUZ_s:
+                psegs.loc[:, 's_luz'] = 'no_luz'
+            elif dname == 'luz_pid' and missingLUZ_p:
+                psegs.loc[:, 'p_luz'] = 'no_luz'
+            else:
+                print(f"bad file path {tabPath}")
+                # pass
+                sys.exit()
 
     print('final columns')
     try:
