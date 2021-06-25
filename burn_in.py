@@ -94,7 +94,6 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
 
     ###############do stuff###############
 
-    # try: #if a county fails-don't kill thread
     start = time.time()
 
     #mask land cover to correct extent using 20m buffered county polygon
@@ -262,13 +261,6 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     
 
     etime(cf, "Total Run ", start)
-    return 0
-
-    # except Exception as e: 
-    #     print(e)
-    #     etime(cf, f"main exception \n{e}", st)
-    #     print("********* ", cf, " FAILED **********\n\n")
-    #     return -1
 
 #########################################################################################
 ####################################PREP FUNCTIONS#######################################

@@ -93,7 +93,8 @@ def datacheck(cf, psegs, folder):
     print(f'--Input psegs crs: {psegs.crs}')
     if psegs.crs != "epsg:5070":
         print("psegs crs is not 'epsg:5070', exiting...")
-        sys.exit()
+        raise TypeError("psegs crs is not 'epsg:5070'")
+        # sys.exit()
 
     pre = len(psegs)
     LC_classes = psegs.Class_name.unique()
@@ -328,7 +329,8 @@ def sjoin_mp(psegs, newlu, newlogic, df1, anci_folder, ancipath, batch_size):
 
     if type(newlogic) != str:
         print(f'Logic must be string! "logic" is currently {type(newlogic)}')
-        sys.exit()
+        raise TypeError(f'Logic must be string! "logic" is currently {type(newlogic)}')
+        # sys.exit()
 
     print(f'--Start sjoin_mp for {newlu}, {newlogic}\n----Anci: {os.path.basename(ancipath)}')
 
@@ -338,31 +340,31 @@ def sjoin_mp(psegs, newlu, newlogic, df1, anci_folder, ancipath, batch_size):
         print(f'----Anci ({os.path.basename(ancipath)}) is empty, skipping step') 
 
     else:
-        try:
-            df1, num_chunks = sub_df_and_chunk2(df1, batch_size)
-            print(f"----df1 len: {len(df1)} anci len: {len(anci)}")
+        # try:
+        df1, num_chunks = sub_df_and_chunk2(df1, batch_size)
+        print(f"----df1 len: {len(df1)} anci len: {len(anci)}")
 
-            cpus_minus_1 = mp.cpu_count() - 1
-            # print(f'Utilizing {cpus_minus_1} out of {mp.cpu_count()} cores')
-            pool = mp.Pool(processes=cpus_minus_1)
+        cpus_minus_1 = mp.cpu_count() - 1
+        # print(f'Utilizing {cpus_minus_1} out of {mp.cpu_count()} cores')
+        pool = mp.Pool(processes=cpus_minus_1)
 
-            chunk_iterator = []
-            for i in range(0, num_chunks):
-                mn, mx = i * batch_size, (i + 1) * batch_size
-                gdf_args = df1[mn:mx], anci
-                chunk_iterator.append(gdf_args)
+        chunk_iterator = []
+        for i in range(0, num_chunks):
+            mn, mx = i * batch_size, (i + 1) * batch_size
+            gdf_args = df1[mn:mx], anci
+            chunk_iterator.append(gdf_args)
 
-            sj_results = pool.map(sjoin_mp_pt2, chunk_iterator)
-            pool.close()
-            apply_lu(psegs, sj_results, newlu, newlogic)
+        sj_results = pool.map(sjoin_mp_pt2, chunk_iterator)
+        pool.close()
+        apply_lu(psegs, sj_results, newlu, newlogic)
 
-        except AssertionError:
-            _, _, tb = sys.exc_info()
-            traceback.print_tb(tb) # Fixed format
-            tb_info = traceback.extract_tb(tb)
-            filename, line, func, text = tb_info[-1]
-            print('An error occurred on line {} in statement {}'.format(line, text))
-            exit(1)
+        # except AssertionError:
+        #     _, _, tb = sys.exc_info()
+        #     traceback.print_tb(tb) # Fixed format
+        #     tb_info = traceback.extract_tb(tb)
+        #     filename, line, func, text = tb_info[-1]
+        #     print('An error occurred on line {} in statement {}'.format(line, text))
+            # exit(1)
 
 def adjacency_mp(psegs, newlu, newlogic, df1, df2, btype, minborder, batch_size):
     """
@@ -834,7 +836,6 @@ def RUN(cf, test):
     batch_size = luconfig.batch_size
     batch_log_Path = luconfig.batch_log_Path
 
-    # try:
     cf_st = time.time()
     print(f'\n--Start {cf}: {time.asctime()}')
     b_log = open(batch_log_Path, "a")
@@ -914,7 +915,8 @@ def RUN(cf, test):
                 psegs.loc[:, col] = 0
             else:
                 print(f"Required columns still missing.\npseg cols:{psegs.columns}\nRequired joined cols: {col}")
-                sys.exit()
+                # sys.exit()
+                raise TypeError(f"Required columns still missing.\npseg cols:{psegs.columns}\nRequired joined cols: {col}")
 
     psegs = datacheck(cf, psegs, folder)
 
@@ -1158,11 +1160,6 @@ def RUN(cf, test):
     psegs.to_file(outPath, layer=outLayer, driver='GPKG')
     etime(cf, psegs,  f"Output write", wt)
     
-    flag = 0
-    return flag, psegs
-        
-    # except:
-    #     flag = -1
-    #     return flag, psegs
+    return psegs
 
 

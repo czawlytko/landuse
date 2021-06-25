@@ -1,7 +1,8 @@
-anci_folder = f'B:/ancillary'
-folder = f'B:/landuse/version1'
+anci_folder = f'P:/ancillary'
+folder = f'P:/landuse/version1'
 batch_size = 10000 # used in landuse_rev2 and TC_LU_Submodule_v1
 batch_log_Path = f"{folder}/batch_log.txt"
+batch_error_log_Path = f'{folder}/batch_error_log.txt'
 crosswalk_csv = r'lu_change/P6RollUpLUCrosswalk.csv' 
 lu_change_csv = r'lu_change/p6lu_change_all_classes.csv'
 TC_Tile_Min = 150000 # thresholds for minimum number of psegs required to generate tiles

@@ -27,10 +27,28 @@ from pathlib import Path
 
 import tc.dense_mp_v1 as env_pkg
 from tc.dense_mp_v1 import dense as callDense
-import tc.QGIS_geoprocessing as qgis_pkg
 import luconfig
 from helpers import etime
 
+#########################################################################################
+#############################CLASSES NEEDED TO MP TILES##################################
+#########################################################################################
+"""
+Got these from: https://stackoverflow.com/questions/6974695/python-process-pool-non-daemonic
+"""
+class NoDaemonProcess(mp.Process):
+    # make 'daemon' attribute always return False
+    def _get_daemon(self):
+        return False
+    def _set_daemon(self, value):
+        pass
+    daemon = property(_get_daemon, _set_daemon)
+
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class MyPool(mp.pool.Pool):
+    freeze_support()
+    Process = NoDaemonProcess
 
 #####################################################################################
 #------------------------------- MAIN ------------- --------------------------------#
@@ -54,11 +72,11 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     if NUM_TILES < 1:
         print("ERROR: Core distribution would result in 0 tiles running at a time")
         print("\tIncrease cores or decrease NUM_CPUS")
-        raise TypeError("TC ERROR: Core distribution would result in 0 tiles running at a time")
+        sys.exit(0)
     elif NUM_TILES == 1:
         print("ERROR: Core distribution would result in 1 tile running at a time")
         print("\tIf you want to run serially, comment out sys.exit below this message")
-        raise TypeError("TC ERROR: Core distribution would result in 1 tile running at a time")
+        sys.exit(0)
     else:
         print("Running ", NUM_TILES, " tiles at a time")
         print("Each tile will have ", NUM_CPUS, " cores")
@@ -76,7 +94,7 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     tiles_shp = f"{folder}/{cf}/temp/tc_tiles.shp" 
     
     #location of temp files needed for QGIS workflows will be written - can delete these after
-    qgis_temp_files_path = Path(folder,cf,"temp_qgis_files")
+    qgis_temp_files_path = Path(folder,cf,"temp_TC_files")
     if not os.path.exists(qgis_temp_files_path):
         os.makedirs(qgis_temp_files_path)
 
@@ -150,7 +168,8 @@ def run_trees_over_submodule(NUM_CPUS, cf):
 
     #pull processors
     print("\n")
-    pool = MyPool(NUM_TILES) #Make non daemon threads to call mp functions from threads
+    pool = MyPool(NUM_TILES)
+    # pool = mp.Pool(NUM_TILES) #Make non daemon threads to call mp functions from threads
     data = pool.map(runTCT, chunk_iterator)
     pool.close()
     pool.join()
@@ -207,26 +226,15 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     # etime(cf, "Deleted temp folder", st)
 
     etime(cf, "Tree Canopy Model - run_trees_over_submodule()", start)
+    return 0
 
-#########################################################################################
-#############################CLASSES NEEDED TO MP TILES##################################
-#########################################################################################
-"""
-Got these from: https://stackoverflow.com/questions/6974695/python-process-pool-non-daemonic
-"""
-class NoDaemonProcess(mp.Process):
-    # make 'daemon' attribute always return False
-    def _get_daemon(self):
-        return False
-    def _set_daemon(self, value):
-        pass
-    daemon = property(_get_daemon, _set_daemon)
+    # except Exception as e: 
+    #     print(e)
+    #     etime(cf, f"main exception \n{e}", start)
+    #     print("********* ", cf, " FAILED **********\n\n")
+    #     return -1
 
-# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
-# because the latter is only a wrapper function, not a proper class.
-class MyPool(mp.pool.Pool):
-    freeze_support()
-    Process = NoDaemonProcess
+
 
 #########################################################################################
 #################################RUN WORKFLOWS###########################################
@@ -354,11 +362,8 @@ def calcTCT4(gdf, roads, bufferSize, envType, tile, cf, NUM_CPUS):
         buildings = buildings[['PID', 'geometry']]
 
         #2.Dissolve low veg segments that touch a building or other imp with buildings and other imp based on parcel ID
-        layer_name = 'tct_bufs_'+str(envType)+'_'+str(tile)
-        input_layer = f"{folder}/{cf}/temp_qgis_files/temp_" + layer_name + ".gpkg|layername=" + layer_name
-        output_layer = f"{folder}/{cf}/temp_qgis_files/" + layer_name+".gpkg"
-        gdf.to_file(f"{folder}/{cf}/temp_qgis_files/temp_" + layer_name + ".gpkg", layer=layer_name, driver="GPKG")
-        gdf = qgis_pkg.dissolve(input_layer, output_layer, True, fields=['PID'])
+        gdf = gdf.dissolve(by='PID')
+        gdf = gdf.reset_index().explode()
         gdf = gdf[['PID', 'geometry']]
         note = str(tile) + "--Unioned gdf"
         etime(cf, note, st)
@@ -392,8 +397,9 @@ def calcTCT4(gdf, roads, bufferSize, envType, tile, cf, NUM_CPUS):
         gdf = gdf[['geometry']]
         if len(gdf) > 0:
             layerName = 'no_roads' + str(envType)+'_'+str(tile)
-            gdf.to_file(f"{folder}/{cf}/temp_qgis_files/temp_" + layerName + ".gpkg", layer=layerName, driver='GPKG')
-            return f"{folder}/{cf}/temp_qgis_files/temp_" + layerName + ".gpkg|layername=" + layerName
+            fname = f"{folder}/{cf}/temp_TC_files/temp_{layerName}.gpkg"
+            gdf.to_file(fname, layer=layerName, driver='GPKG')
+            return f"{fname}|layername={layerName}"
     return ''
 
 #########################################################################################
@@ -518,11 +524,11 @@ def getSubsetEnv(gdf, envType, allTurf, tile, cf):
         if len(forest) > 0:
             forest['Id'] = [int(i) for i in range(1, len(forest)+1)]
             for_layer_name = 'forest_'+str(envType)+'_'+str(tile)
-            input_layer = f"{folder}/{cf}/temp_qgis_files/temp_" + for_layer_name + ".gpkg|layername=" + for_layer_name
-            output_layer = f"{folder}/{cf}/temp_qgis_files/" + for_layer_name + ".gpkg"
-            forest.to_file(f"{folder}/{cf}/temp_qgis_files/temp_" + for_layer_name + ".gpkg", layer=for_layer_name, driver="GPKG")
-            qgis_pkg.dissolve(input_layer, output_layer, False) 
-
+            output_layer = f"{folder}/{cf}/temp_TC_files/{for_layer_name}.gpkg"
+            forest = forest.dissolve('Class_name')
+            forest = forest.reset_index().explode()
+            forest.to_file(output_layer, layer=for_layer_name, driver="GPKG")
+            del forest
             return [gdf, output_layer]
     return [gpd.GeoDataFrame(), '']
 
@@ -559,12 +565,8 @@ def getSubsetAg(gdf, envType, allTurf, allAg, tile, cf, NUM_CPUS):
         forest_ddis = forest[forest['Id'].isin(sb_ag)]
         forest = forest[~forest['Id'].isin(sb_ag)]
         if len(forest) > 0:
-            for_layer_name = 'forest_'+str(envType)+'_'+str(tile)
-            input_layer =f"{folder}/{cf}/temp_qgis_files/temp_" + for_layer_name + ".gpkg|layername=" + for_layer_name
-            output_layer = f"{folder}/{cf}/temp_qgis_files/" + for_layer_name+".gpkg"
-            forest.to_file(f"{folder}/{cf}/temp_qgis_files/temp_" + for_layer_name + ".gpkg", layer=for_layer_name, driver="GPKG")
-            forest = qgis_pkg.dissolve(input_layer, output_layer, True, fields=None)
-            forest = forest.explode()
+            forest = forest.dissolve(by='Class_name')
+            forest = forest.reset_index().explode()
             forest = forest[['Id', 'geometry']]
             if len(forest_ddis) > 0:
                 forest = forest.append(forest_ddis[['Id', 'geometry']])
@@ -584,8 +586,10 @@ def getSubsetAg(gdf, envType, allTurf, allAg, tile, cf, NUM_CPUS):
             forest.loc[:, 'Dis'] = 0
             forest.loc[forest['Id'].isin(sb_ag), 'Dis'] = 1 #don't dissolve if 1
             forest['Id'] = [int(x) for x in range(1, len(forest)+1)]
-            
-            forest.to_file(f"{folder}/{cf}/temp_qgis_files/" + for_layer_name + ".gpkg", layer=for_layer_name, driver="GPKG")
+            for_layer_name = 'forest_'+str(envType)+'_'+str(tile)
+            output_layer = f"{folder}/{cf}/temp_TC_files/{for_layer_name}.gpkg"
+            forest.to_file(output_layer, layer=for_layer_name, driver="GPKG")
+            del forest
 
             #only keep pseg records needed for TCT workflow
             gdf = gdf[(gdf['Class_name'].isin(['Buildings', 'Other Impervious Surfaces'])) | (gdf.lu.isin(allTurf))] #classes to be buffered
@@ -612,12 +616,12 @@ def bufIntBuilding(gdf, buildings, NUM_CPUS):
 def deleteTempFiles(cf):
     """
     Method: deleteTempFiles()
-    Purpose: Delete temp_qgis_files folder
+    Purpose: Delete temp_TC_files folder
     Params: cf - county fips code
     Returns: N/A
     """
     folder = luconfig.folder
-    qgis_temp_files_path = Path(folder,cf,"temp_qgis_files")
+    qgis_temp_files_path = Path(folder,cf,"temp_TC_files")
     if os.path.isdir(qgis_temp_files_path):
         try:
             shutil.rmtree(qgis_temp_files_path)
@@ -676,15 +680,9 @@ def groupForest(forest_list, tct_list, tile, cf, NUM_CPUS):
     if len(forest_group) > 0: #check if forest exists in tile
         forest = gpd.GeoDataFrame(pd.concat(forest_group, ignore_index=True), crs="EPSG:5070")
         forest = forest.reset_index()[['geometry']]
-        for_layer_name = 'all_forest_'+str(tile)
-        input_layer =  f"{folder}/{cf}/temp_qgis_files/temp_" + for_layer_name + ".gpkg|layername=" + for_layer_name
-        output_layer = f"{folder}/{cf}/temp_qgis_files/" + for_layer_name + ".gpkg"
-        forest.to_file(f"{folder}/{cf}/temp_qgis_files/temp_" + for_layer_name + ".gpkg", layer=for_layer_name, driver="GPKG")
-        forest = qgis_pkg.dissolve(input_layer, output_layer, True)
-        forest = forest[['geometry']] #need to remove level_1
-        forest = forest.reset_index()
-        forest = forest.explode()
-        forest = forest[['geometry']]
+        forest.loc[:, 'tmp'] = 1
+        forest = forest.dissolve(by='tmp')
+        forest = forest.reset_index().explode()[['geometry']]
     if len(addWindbreak) > 0:
         if len(forest) > 0:
             forest = forest.append(addWindbreak)

@@ -408,7 +408,6 @@ def run_lu_change(cf, lu_type):
     print("\t", luconfig.crosswalk_csv)
     print("\t", luconfig.lu_change_csv)
 
-    # try: # if a county fails don't disrupt other counties
     folder = luconfig.folder
 
     anci_folder = luconfig.anci_folder
@@ -517,24 +516,20 @@ def run_lu_change(cf, lu_type):
     change_df = xml.buildChangeData(lc_change_ras_path+'.xml')
     change_df = xml.defineReclassValues(change_df) #Value is LC Change and NewVal is T1 LC
     lc_change_dict = {}
-    try:
-        for idx, row in change_df.iterrows():
-            desc = row['Description']
-            if 'Impervious Structures' in desc:
-                desc = desc.replace("Impervious Structures", "Structures")
-                print("Updating Impervious Structures: ", desc)
-            elif 'Other Impervious' in desc and 'Surfaces' not in desc:
-                if 'Surface' in desc:
-                    desc = desc.replace("Other Impervious Surface", "Other Impervious Surface")
-                    print("Updating Other Impervious Surfaces: ", desc)
-                else:
-                    desc = desc.replace("Other Impervious", "Other Impervious Surfaces") 
-                    print("Updating Other Impervious: ", desc)
+    for idx, row in change_df.iterrows():
+        desc = row['Description']
+        if 'Impervious Structures' in desc:
+            desc = desc.replace("Impervious Structures", "Structures")
+            print("Updating Impervious Structures: ", desc)
+        elif 'Other Impervious' in desc and 'Surfaces' not in desc:
+            if 'Surface' in desc:
+                desc = desc.replace("Other Impervious Surface", "Other Impervious Surface")
+                print("Updating Other Impervious Surfaces: ", desc)
+            else:
+                desc = desc.replace("Other Impervious", "Other Impervious Surfaces") 
+                print("Updating Other Impervious: ", desc)
 
-            lc_change_dict[desc] = row['Value']
-    except:
-        print(lc_change_dict)
-        sys.exit()
+        lc_change_dict[desc] = row['Value']
     # Tag change raster with majority LC change class and majority T2 LU class
     chg_tab = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', lc_change_ras_path, list(lc_change_dict.values()), ['zone', 'LC_Chg_Val'], False, True)
     for i in list(set(list(chg_tab['LC_Chg_Val']))):
@@ -662,11 +657,4 @@ def run_lu_change(cf, lu_type):
 
     etime(cf, 'Total LU Change Time', st_time)
 
-
-    return 0
-
-    # except Exception as e:
-    #     etime(cf, f"main exception \n{e}", st_time)
-    #     print("********* ", cf, " FAILED **********\n\n")
-    #     return -1
 

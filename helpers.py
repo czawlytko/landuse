@@ -51,7 +51,8 @@ def tformat(elapsed_t):
 def checkFile(fPath): # used for all anci data
     if not os.path.isfile(fPath):
         print(f"--Input File Path failed checkFile()\n\t{fPath}")
-        sys.exit()
+        raise TypeError(f"--Input File Path failed checkFile()\n\t{fPath}")
+        # sys.exit()
     else:
         pass
 
@@ -134,8 +135,8 @@ def joinData(cf, psegs, remove_columns):
 
     if len(missing_TA) > 0:
         print(f'ERROR! Missing TA files! Exiting...\n {missing_TA}')
-
-        sys.exit()
+        raise TypeError(f'ERROR! Missing TA files! Exiting...\n {missing_TA}')
+        # sys.exit()
 
     for dname, tadict in TA_dict.items():
         merge_st = time.time()
@@ -198,7 +199,8 @@ def joinData(cf, psegs, remove_columns):
                                     cbp_rat = cbp_rat.rename(columns={t_cols[0]:'CBP_mask'})
                             if 'CBP_mask' not in cbp_rat.columns:
                                 print("LUZ table has VALUE_# cols and CBP mask does not have mask column in vat")
-                                sys.exit(0)
+                                raise TypeError("LUZ table has VALUE_# cols and CBP mask does not have mask column in vat")
+                                # sys.exit(0)
                             for old_name in checkCBP:
                                 val = int(old_name.split('_')[-1]) # get the #
                                 if val in list(cbp_rat['Value']):
@@ -224,6 +226,10 @@ def joinData(cf, psegs, remove_columns):
 
             if dname in ('s_area', 'p_area'):
                 print(dname, " - group 2 (areas)")
+                if 'PID' in list(tabledf) and zoneID == 'PID':
+                    tabledf = tabledf[['Value', 'Count']]
+                elif 'SID' in list(tabledf) and zoneID == 'SID':
+                    tabledf = tabledf[['Value', 'Count']]
 
                 tabledf = tabledf.rename(columns={'Value': zoneID, 'Count': dname})
 
@@ -251,8 +257,9 @@ def joinData(cf, psegs, remove_columns):
                 psegs.loc[:, 'p_luz'] = 'no_luz'
             else:
                 print(f"bad file path {tabPath}")
+                raise TypeError(f"bad file path {tabPath}")
                 # pass
-                sys.exit()
+                # sys.exit()
 
     print('final columns')
     try:

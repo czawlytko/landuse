@@ -169,7 +169,8 @@ def reclassRas(ary, rollUpdf):
     if len(missing) > 0:
         print("LU Classes not rolled up: ", missing)
         print("Add to roll up csv")
-        sys.exit(1)
+        raise TypeError(f'LU Classes not rolled up: {missing}')
+        # sys.exit(1)
     return new_ary
 
 def createLUChange(t1_ary, t2_ary):
@@ -377,7 +378,8 @@ def run_p6_rollup_change(cf, lu_type):
         print("Shapes still not equal after masking ras with ras")
         print("t1: ", t1_ary.shape)
         print("t2: ", t2_ary.shape)
-        sys.exit(1)
+        raise TypeError("T1 and T2 array shapes still not equal after masking ras with ras")
+        # sys.exit(1)
     etime(cf, 'Read T1 and T2 LU rasters', st)
     st = time.time()
 

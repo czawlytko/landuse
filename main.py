@@ -9,7 +9,7 @@ import fiona
 import time
 import os
 import sys
-import traceback # used for test sjoin assertion errors in sjoin_mp
+import traceback
 import multiprocessing as mp
 import gc
 from pathlib import Path
@@ -48,6 +48,13 @@ def intro(cflist):
     print(f'--Geopandas version: {gpd.__version__}')
     print(f'--Shapely version: {shapely.__version__}')
 
+def write_error(cf, module, exc_info, error_log_path):
+    with open(error_log_path, "a") as e_log:
+        print(f'ERROR: {cf} failed on {module}\n\n')
+        e_log.write('----------------------------------\n')
+        e_log.write(f'{cf} failed on {module}: \n')
+        e_log.write(f'{exc_info}')
+        e_log.write('----------------------------------\n')
 
 if __name__ == "__main__":
 
@@ -76,17 +83,15 @@ if __name__ == "__main__":
         # LAND USE
         if not os.path.isfile(f'{luconfig.folder}/{cf}/output/data.gpkg'):
             helpers.checkCounty(cf) # check ancillary data and fips and...
-            lu_flag, psegs = landuse.RUN(cf, test) 
-            if lu_flag != 0:
-                print("Land Use failed. See logs.")
-                sys.exit()
+            try:
+                psegs = landuse.RUN(cf, test)
+            except:
+                write_error(cf, 'Land Use', traceback.format_exc(), luconfig.batch_error_log_Path)
+                continue
         else:
             print('\nLU already complete')
-            lu_flag = 0
-            restart = 1
 
         # TREE CANOPY
-        ## TILES
         if not os.path.isfile(f'{luconfig.folder}/{cf}/output/trees_over.gpkg'):
             if not os.path.isfile(f'{luconfig.folder}/{cf}/temp/tc_tiles.shp'):
                 print("Creating tiles...")
@@ -95,41 +100,44 @@ if __name__ == "__main__":
                     createTiles(cf, psegs)
                 except:
                     print('Failed to create tiles from psegs in memory. Reading.')
-                    psegs = gpd.read_file(f'{luconfig.folder}/{cf}/output/data.gpkg', layer='psegs_lu')
-                    createTiles(cf, psegs)
+                    try:
+                        psegs = gpd.read_file(f'{luconfig.folder}/{cf}/output/data.gpkg', layer='psegs_lu')
+                        createTiles(cf, psegs)
+                    except:
+                        write_error(cf, 'Create TC Tiles', traceback.format_exc(), luconfig.batch_error_log_Path)
+                        continue
                 etime("batch", "Created Tiles for TC", tc_st)
                 del psegs # maybe remove?
 
             # TREE CANOPY MAIN
-            tc_flag = trees_over.run_trees_over_submodule(luconfig.TC_CPUS, cf)
-            if tc_flag == -1:
-                print("Trees over Submodule incomplete; Check log for error")
-                sys.exit()
+            try:
+                trees_over.run_trees_over_submodule(luconfig.TC_CPUS, cf)
+            except:
+                write_error(cf, 'Tree Canopy', traceback.format_exc(), luconfig.batch_error_log_Path)
+                continue
         else:
             print('\nTC already complete')
-            tc_flag = 0
         # BURN IN
         out_lu_burnin_path = f"{folder}/{cf}/output/{cf}_lu_2017_2018.tif"
-        if lu_flag == 0 and tc_flag == 0 and not os.path.isfile(out_lu_burnin_path):
-            burnin_flag = burn_in.run_burnin_submodule(luconfig.folder, luconfig.anci_folder, cf)
-            if burnin_flag == -1:
-                print("Burn in Submodule incomplete; Check log for error")
-                sys.exit()
+        if not os.path.isfile(out_lu_burnin_path):
+            try:
+                burn_in.run_burnin_submodule(luconfig.folder, luconfig.anci_folder, cf)
+            except:
+                write_error(cf, 'Burn In', traceback.format_exc(), luconfig.batch_error_log_Path)
+                continue
         else: #os.path.isfile(f"{folder}/{cf}/output/{cf}_lu_2017_2018.tif"):
             print('\nBurn in already complete')
-            burnin_flag = 0
 
         
         # LAND USE CHANGE
-        
-        if lu_flag == 0  and burnin_flag == 0 and tc_flag == 0 and os.path.isfile(out_lu_burnin_path):
+        change_csv_path = f'{folder}/{cf}/output/{cf}_P6LU_Change_v1_summary.csv'
+        change_ras_path = f'{folder}/{cf}/output/{cf}_P6LU_Change_v1.tif'
+        if not os.path.isfile(change_csv_path) or not os.path.isfile(change_ras_path):
             lu_type = 'v1'
-            lu_chg_flag = lu_change_module.run_lu_change(cf, lu_type)
+            try:
+                lu_change_module.run_lu_change(cf, lu_type)
+            except:
+                write_error(cf, 'LU Change', traceback.format_exc(), luconfig.batch_error_log_Path)
+                continue
 
-            if lu_chg_flag == -1:
-                print("LU Change Module incomplete; Check log for error")
-                sys.exit()
-
-        if lu_flag == 0 and tc_flag == 0 and burnin_flag == 0 and lu_chg_flag == 0:
-            etime("batch", f"{cf} Completed full run", cf_st)
-
+        etime("batch", f"{cf} Completed full run", cf_st)

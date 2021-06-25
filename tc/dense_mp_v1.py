@@ -14,8 +14,6 @@ NOTE: This version is to be used for the 14 trial counties. This version exclude
       dense methods.
 """
 
-
-
 import os
 import sys
 import time
@@ -41,8 +39,9 @@ class dense:
             densePIDs = dense.getDense(parcels, urban)
             return densePIDs
         else:
-            print("No urban polys - exiting")
-            sys.exit(1)
+            print("No urban polys")
+            # sys.exit(1)
+            return []
 
     def spatial_join(arg):
         """
@@ -125,17 +124,17 @@ def readPolys(gdbPath, layerName):
             lcSegGDF = gpd.read_file(gdbPath, layer=layerName, crs="EPSG:5070")#, bbox=mask)
         else:
             print("The geodatabase does not exist: ", gdbPath)
-            sys.exit()
+            raise TypeError(f"The geodatabase does not exist: {gdbPath}")
     elif gdbPath[-3:] == 'shp':
         if os.path.isfile(gdbPath):
             lcSegGDF = gpd.read_file(gdbPath, crs="EPSG:5070")#, bbox=mask)
         else:
             print("The shapefile does not exist: ", gdbPath)
-            sys.exit()   
+            raise TypeError(f"The shapefile does not exist: {gdbPath}") 
     else:
         print("Expecting shapefile (shp) OR ")
         print(layerName, " as file stored in geodatabase (gdb) ", gdbPath)
-        sys.exit()
+        raise TypeError(f"Expecting shapefile (shp) or {layerName} stored as gpkg or gdb: {gdbPath}")
     if lcSegGDF.crs == {}:
         lcSegGDF.crs = 'epsg:5070'
     return lcSegGDF #ONLY FOR TESTING - SHOULD NOT NEED THIS AFTER FIX GEOMS IS CORRECT
@@ -154,18 +153,18 @@ def readPolysMask(gdbPath, layerName, mask):
             lcSegGDF = gpd.read_file(gdbPath, layer=layerName, bbox=mask, crs="EPSG:5070")
         else:
             print("The geodatabase does not exist: ", gdbPath)
-            sys.exit()
+            raise TypeError(f"The geodatabase does not exist: {gdbPath}")
     elif gdbPath[-3:] == 'shp':
         # print("Starting ", gdbPath.split('/')[-1], "...")
         if os.path.isfile(gdbPath):
             lcSegGDF = gpd.read_file(gdbPath, bbox=mask, crs="EPSG:5070")
         else:
             print("The shapefile does not exist: ", gdbPath)
-            sys.exit()   
+            raise TypeError(f"The shapefile does not exist: {gdbPath}")   
     else:
         print("Expecting shapefile (shp) OR ")
         print(layerName, " as file stored in geodatabase (gdb) ", gdbPath)
-        sys.exit()
+        raise TypeError(f"Expecting shapefile (shp) or {layerName} stored as gpkg or gdb: {gdbPath}")
     if lcSegGDF.crs == {}:
         # print("Empty crs - defining as epsg 5070")
         lcSegGDF.crs = 'epsg:5070'
@@ -260,13 +259,16 @@ def runEnviro(psegs, densePIDs):
             if o in al:
                 allAg.append(a)
     agPar = list(psegs[psegs['lu'].isin(allAg)]['PID'])
-    psegs.loc[psegs['PID'].isin(agPar), 'EnvType'] = 4
+    if len(agPar) > 0:
+        psegs.loc[psegs['PID'].isin(agPar), 'EnvType'] = 4
     del agPar
     #class dense parcels (ag and roads excluded)
-    psegs.loc[(psegs['EnvType'] == 0) & (psegs['PID'].isin(densePIDs)), 'EnvType'] = 1
+    if len(densePIDs) > 0:
+        psegs.loc[(psegs['PID'].isin(densePIDs)), 'EnvType'] = 1
     #get forested PIDs
     forest = checkForest(psegs[psegs['EnvType'] == 0]) #only need to check where EnvType hasn't been declared
-    psegs.loc[(psegs['EnvType'] == 0) & (psegs['PID'].isin(forest)), 'EnvType'] = 3
+    if len(forest) > 0:
+        psegs.loc[(psegs['EnvType'] == 0) & (psegs['PID'].isin(forest)), 'EnvType'] = 3
     del forest
     #remaining non-roads are less dense
     psegs.loc[(psegs['lu'] != 'Roads') & (psegs['Class_name'] != 'Roads') & (psegs['EnvType'] == 0), 'EnvType'] = 2
