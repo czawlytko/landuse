@@ -1036,32 +1036,34 @@ def assignGroups(gdf, uid):
             uid - unique ID field to relate the new GID field to
     Returns: groups - dataframe of uid and GID (unique group ids)
     """
-    left_id, right_id = uid+'_left', uid+'_right'
-    joined_table = sjoin_mp6(gdf, 15000, 'intersects', [left_id, right_id], gdf) 
-    joined_table = joined_table[joined_table[left_id] != joined_table[right_id]]
-    groups = pd.DataFrame()
-    groups.loc[:, uid] = list(set(list(set(list(joined_table[left_id])+list(joined_table[right_id]))))) #all zones that are touching
-    groups.loc[:, 'GID'] = 0 #set group id to 0
-    gid = 1
-    for zone in list(groups[uid]):
-        if list(groups[groups[uid] == zone]['GID'])[0] == 0: #still needs group
-            all_in_group = list(joined_table[joined_table[left_id] == zone][right_id])
-            tmp = all_in_group.copy()
-            while len(tmp) > 0:
-                t = list(joined_table[joined_table[left_id] == tmp[0]][right_id])
-                t = list( set(t) - set(all_in_group))
-                tmp += t
-                all_in_group += t
-                del tmp[0]
+    if len(gdf) > 0:
+        left_id, right_id = uid+'_left', uid+'_right'
+        joined_table = sjoin_mp6(gdf, 15000, 'intersects', [left_id, right_id], gdf) 
+        joined_table = joined_table[joined_table[left_id] != joined_table[right_id]]
+        groups = pd.DataFrame()
+        groups.loc[:, uid] = list(set(list(set(list(joined_table[left_id])+list(joined_table[right_id]))))) #all zones that are touching
+        groups.loc[:, 'GID'] = 0 #set group id to 0
+        gid = 1
+        for zone in list(groups[uid]):
+            if list(groups[groups[uid] == zone]['GID'])[0] == 0: #still needs group
+                all_in_group = list(joined_table[joined_table[left_id] == zone][right_id])
+                tmp = all_in_group.copy()
+                while len(tmp) > 0:
+                    t = list(joined_table[joined_table[left_id] == tmp[0]][right_id])
+                    t = list( set(t) - set(all_in_group))
+                    tmp += t
+                    all_in_group += t
+                    del tmp[0]
 
-            all_gids = list(set(list(groups[groups[uid].isin(all_in_group)]['GID']))) #should set of 0
-            all_in_group += [zone]
-            if len(all_gids) > 1 or all_gids[0] != 0: #should never happen
-                groups.loc[groups[uid].isin(all_in_group), 'GID'] = all_gids[0]
-            else:
-                groups.loc[groups[uid].isin(all_in_group), 'GID'] = gid
-                gid += 1
-    return groups[[uid, 'GID']]
+                all_gids = list(set(list(groups[groups[uid].isin(all_in_group)]['GID']))) #should set of 0
+                all_in_group += [zone]
+                if len(all_gids) > 1 or all_gids[0] != 0: #should never happen
+                    groups.loc[groups[uid].isin(all_in_group), 'GID'] = all_gids[0]
+                else:
+                    groups.loc[groups[uid].isin(all_in_group), 'GID'] = gid
+                    gid += 1
+        return groups[[uid, 'GID']]
+    return pd.DataFrame(columns={uid, 'GID'})
 
 def indirectTC(tree_canopy_gdf, psegs, lu_change_gdf):
     """

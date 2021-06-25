@@ -160,22 +160,23 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
     # Group newly developed parcels to find new neighborhoods that should be back-casted the same
     parcel_groups = lch.assignGroups(parcels_gdf[['PID', 'geometry']], 'PID')
     ## SMM 6/18/21 - REPLACED GID WITH PAR_GID
-    parcel_groups = parcel_groups.rename(columns={'GID':'PAR_GID'})
-    lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'PAR_GID']], how='left')
-
-    # Get majority TYPE for each unique GID
-    gids = list(set(list(parcel_groups['PAR_GID'])))
-    for gid in gids:
-        # if some are equal counts, use mode to get list to give precendence to ag classes
-        types = list(lc_change_gdf[lc_change_gdf['PAR_GID'] == gid][['TYPE']].mode()['TYPE']) 
-        if 'crop' in types:
-            parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'crop'
-        elif 'pasture' in types:
-            parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'pasture'
-        else:
-            parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'other'
-    
-    lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'GRP_TYPE']],on='PID', how='left')
+    if len(parcel_groups) > 0:
+        parcel_groups = parcel_groups.rename(columns={'GID':'PAR_GID'})
+        lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'PAR_GID']], how='left')
+        # Get majority TYPE for each unique GID
+        for gid in gids:
+            # if some are equal counts, use mode to get list to give precendence to ag classes
+            types = list(lc_change_gdf[lc_change_gdf['PAR_GID'] == gid][['TYPE']].mode()['TYPE']) 
+            if 'crop' in types:
+                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'crop'
+            elif 'pasture' in types:
+                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'pasture'
+            else:
+                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'other'
+        
+        lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'GRP_TYPE']],on='PID', how='left')
+    else:
+        lc_change_gdf.loc[:, 'GRP_TYPE'] = None
 
     # find Barren to LV polys whose area is at least 65% shared with newly dev parcels
     barr_lv_dict = {row['zone']:row['geometry'] for idx, row in lc_change_gdf[lc_change_gdf['LC_Change']=='Barren to Low Vegetation'].iterrows()}
@@ -360,14 +361,16 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     t1_tc_gdf.loc[:, 'zone'] = [int(x) for x in range(st_zone, st_zone+len(t1_tc_gdf))]
     all_forest = lc_change_gdf[lc_change_gdf['T1LC'] == 'Tree Canopy'][['zone', 'geometry']].append(t1_tc_gdf)
     groups = lch.assignGroups(all_forest, 'zone')
-    groups_with_change = list(groups[groups['zone']<st_zone]['GID']) #groups containing lc change
-    groups = groups[groups['GID'].isin(groups_with_change)] #remove groups that contain no change
     all_forest.loc[:, 'g_area'] = all_forest.geometry.area
-    groups = groups.merge(all_forest[['zone', 'g_area']], on='zone', how='left')
-    group_area = groups[['GID', 'g_area']].groupby(['GID']).agg('sum').reset_index()
-    groups = groups[['zone', 'GID']].merge(group_area, on='GID')
+    if len(groups) > 0:
+        groups_with_change = list(groups[groups['zone']<st_zone]['GID']) #groups containing lc change
+        groups = groups[groups['GID'].isin(groups_with_change)] #remove groups that contain no change
+        groups = groups.merge(all_forest[['zone', 'g_area']], on='zone', how='left')
+        group_area = groups[['GID', 'g_area']].groupby(['GID']).agg('sum').reset_index()
+        groups = groups[['zone', 'GID']].merge(group_area, on='GID')
+    else:
+        groups = pd.DataFrame(columns={'zone', 'GID', 'g_area'})
     lc_change_gdf = lc_change_gdf.merge(groups, on='zone', how='left') # add group area
-
     all_forest = all_forest.merge(groups[['zone', 'GID', 'g_area']], on='zone', how='right')
     all_forest = all_forest[~all_forest['zone'].isin(list(lc_change_gdf['zone']))] #get t1_tc patches touching tc change
     if len(all_forest) > 0:
