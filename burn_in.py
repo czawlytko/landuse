@@ -172,12 +172,15 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     
 
     for key in clip_dict:
-        in_clip=clip_dict[key][0]
-        out_clip= fr'{proj_folder}/{cf}/output/{cf}_{key}_clip.tif'
-        clip_dict[key].append(out_clip)
-        dtype= (clip_dict[key][1])
-        
-        clip_to_lu(lu_ras_path, key, in_clip, out_clip, dtype)
+        if os.path.isfile(clip_dict[key][0]):
+            in_clip=clip_dict[key][0]
+            out_clip= fr'{proj_folder}/{cf}/output/{cf}_{key}_clip.tif'
+            clip_dict[key].append(out_clip)
+            dtype= (clip_dict[key][1])
+            
+            clip_to_lu(lu_ras_path, key, in_clip, out_clip, dtype)
+        else:
+            etime(cf, f'{key} tif does not exist - not clipping', st)
 
     etime(cf, "Clips done", st)
     st = time.time()
