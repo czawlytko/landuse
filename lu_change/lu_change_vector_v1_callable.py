@@ -157,10 +157,10 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
         
     del lvb_gdf
 
-    # Group newly developed parcels to find new neighborhoods that should be back-casted the same
-    parcel_groups = lch.assignGroups(parcels_gdf[['PID', 'geometry']], 'PID')
     ## SMM 6/18/21 - REPLACED GID WITH PAR_GID
-    if len(parcel_groups) > 0:
+    if len(parcels_gdf) > 0:
+        # Group newly developed parcels to find new neighborhoods that should be back-casted the same
+        parcel_groups = lch.assignGroups(parcels_gdf[['PID', 'geometry']], 'PID')
         parcel_groups = parcel_groups.rename(columns={'GID':'PAR_GID'})
         lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'PAR_GID']], how='left')
         gids = list(set(list(parcel_groups['PAR_GID'])))
