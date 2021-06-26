@@ -210,6 +210,8 @@ def joinData(cf, psegs, remove_columns):
                                     else:
                                         lu_name = lu_name.upper()
                                     if lu_name in luconfig.LUZ_values:
+                                        if lu_name in vcols: # name already exists - check RAT?
+                                            raise TypeError(f'LUZ table error: CBP mask RAT has duplicate name {lu_name}')
                                         vcols.append(lu_name)
                                         tabledf = tabledf.rename(columns={old_name:lu_name})
                                         print(f"renamed {old_name} to {lu_name} using CBP mask dbf")
