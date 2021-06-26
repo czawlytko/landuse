@@ -180,17 +180,20 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
         lc_change_gdf.loc[:, 'GRP_TYPE'] = None
 
     # find Barren to LV polys whose area is at least 65% shared with newly dev parcels
-    barr_lv_dict = {row['zone']:row['geometry'] for idx, row in lc_change_gdf[lc_change_gdf['LC_Change']=='Barren to Low Vegetation'].iterrows()}
-    barr_lv_df = lch.zonal_stats_mp(barr_lv_dict, '', raster_parcels_path, [int(x) for x in new_parcels_list], ['zone']+new_parcels_list, False, False)
-    barr_lv_df.loc[:, 'ns_area'] = barr_lv_df[new_parcels_list].sum(axis=1)
-    barr_lv_gdf = lc_change_gdf[lc_change_gdf['LC_Change']=='Barren to Low Vegetation'][['zone', 'geometry']]
-    barr_lv_gdf.loc[:, 'zone_area'] = barr_lv_gdf.geometry.area
-    barr_lv_df = barr_lv_df.merge(barr_lv_gdf[['zone', 'zone_area']], on='zone')
-    del barr_lv_gdf
-    barr_lv_df.loc[:, 'pctNS'] = barr_lv_df['ns_area'] / barr_lv_df['zone_area']
-    barr_lv_df = barr_lv_df[barr_lv_df['pctNS'] > 0.5]
-    barr_lv_zones = list(barr_lv_df['zone'])
-    del barr_lv_df
+    if len(new_parcels_list) > 0:
+        barr_lv_dict = {row['zone']:row['geometry'] for idx, row in lc_change_gdf[lc_change_gdf['LC_Change']=='Barren to Low Vegetation'].iterrows()}
+        barr_lv_df = lch.zonal_stats_mp(barr_lv_dict, '', raster_parcels_path, [int(x) for x in new_parcels_list], ['zone']+new_parcels_list, False, False)
+        barr_lv_df.loc[:, 'ns_area'] = barr_lv_df[new_parcels_list].sum(axis=1)
+        barr_lv_gdf = lc_change_gdf[lc_change_gdf['LC_Change']=='Barren to Low Vegetation'][['zone', 'geometry']]
+        barr_lv_gdf.loc[:, 'zone_area'] = barr_lv_gdf.geometry.area
+        barr_lv_df = barr_lv_df.merge(barr_lv_gdf[['zone', 'zone_area']], on='zone')
+        del barr_lv_gdf
+        barr_lv_df.loc[:, 'pctNS'] = barr_lv_df['ns_area'] / barr_lv_df['zone_area']
+        barr_lv_df = barr_lv_df[barr_lv_df['pctNS'] > 0.5]
+        barr_lv_zones = list(barr_lv_df['zone'])
+        del barr_lv_df
+    else:
+        barr_lv_zones = []
 
 
     # Assign T1 LU using GRP_TYPE where available, otherwise use TYPE
