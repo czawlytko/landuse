@@ -150,7 +150,12 @@ def run_trees_over_submodule(NUM_CPUS, cf):
 
     #pull processors
     print("\n")
-    pool = MyPool(NUM_TILES) #Make non daemon threads to call mp functions from threads
+    if platform.system() == 'Linux':
+        pool = NestablePool
+    elif platform.system() == 'Windows':
+        pool = MyPool(NUM_TILES)
+    else:
+        raise TypeError(f"OS System not Windows or Linux: {platform.system()}")
     data = pool.map(runTCT, chunk_iterator)
     pool.close()
     pool.join()

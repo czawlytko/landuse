@@ -24,6 +24,7 @@ from shapely.geometry import mapping, shape, MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 import shutil
 from pathlib import Path
+import platform
 
 import tc.dense_mp_v1 as env_pkg
 from tc.dense_mp_v1 import dense as callDense
@@ -50,6 +51,21 @@ class MyPool(mp.pool.Pool):
     freeze_support()
     Process = NoDaemonProcess
 
+#LINUX CLASSES
+class NoDaemonProcessLinux(mp.Process):
+    @property
+    def daemon(self):
+        return False
+    @daemon.setter
+    def daemon(self, value):
+        pass
+class NoDaemonContext(type(mp.get_context())):
+    Process = NoDaemonProcessLinux
+class NestablePool(mp.pool.Pool):
+    def __init__(self, *args, **kwargs):
+        kwargs['context'] = NoDaemonContext()
+        super(NestablePool, self).__init__(*args, **kwargs)
+
 #####################################################################################
 #------------------------------- MAIN ------------- --------------------------------#
 #####################################################################################
@@ -72,11 +88,11 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     if NUM_TILES < 1:
         print("ERROR: Core distribution would result in 0 tiles running at a time")
         print("\tIncrease cores or decrease NUM_CPUS")
-        sys.exit(0)
+        raise TypeError("TC ERROR: Core distribution would result in 0 tiles running at a time")
     elif NUM_TILES == 1:
         print("ERROR: Core distribution would result in 1 tile running at a time")
         print("\tIf you want to run serially, comment out sys.exit below this message")
-        sys.exit(0)
+        raise TypeError("TC ERROR: Core distribution would result in 1 tile running at a time")
     else:
         print("Running ", NUM_TILES, " tiles at a time")
         print("Each tile will have ", NUM_CPUS, " cores")
@@ -168,8 +184,12 @@ def run_trees_over_submodule(NUM_CPUS, cf):
 
     #pull processors
     print("\n")
-    pool = MyPool(NUM_TILES)
-    # pool = mp.Pool(NUM_TILES) #Make non daemon threads to call mp functions from threads
+    if platform.system() == 'Linux':
+        pool = NestablePool
+    elif platform.system() == 'Windows':
+        pool = MyPool(NUM_TILES)
+    else:
+        raise TypeError(f"OS System not Windows or Linux: {platform.system()}")
     data = pool.map(runTCT, chunk_iterator)
     pool.close()
     pool.join()
