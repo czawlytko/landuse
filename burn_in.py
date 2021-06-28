@@ -252,8 +252,6 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
         os.remove(lc_clip)
     if os.path.exists(tc_clip):
         os.remove(tc_clip)
-    #if os.path.exists(tidal_clip):
-     #   os.remove(tidal_clip)
     if os.path.exists(slr_clip):
         os.remove(slr_clip)
     if os.path.exists(pond_clip):
@@ -261,7 +259,15 @@ def run_burnin_submodule(proj_folder, anci_folder, cf):
     if int(gdf.loc[gdf['cf'] == cf]['tidal']) ==1:
         if os.path.exists(tidal_clip):
             os.remove(tidal_clip)
-    
+    if os.path.exists(out_pre_fixforest_path):
+        os.remove(out_pre_fixforest_path)
+    # if os.path.exists(lu_ras_path):
+    #     os.remove(lu_ras_path)
+    if os.path.exists(out_burnin_path):
+        os.remove(out_burnin_path)
+    if os.path.exists(tc_composite_path):
+        os.remove(tc_composite_path)
+  
 
     etime(cf, "Total Run ", start)
 
