@@ -1040,6 +1040,8 @@ def assignGroups(gdf, uid):
         left_id, right_id = uid+'_left', uid+'_right'
         joined_table = sjoin_mp6(gdf, 15000, 'intersects', [left_id, right_id], gdf) 
         joined_table = joined_table[joined_table[left_id] != joined_table[right_id]]
+        if len(joined_table) == 0:
+            return pd.DataFrame(columns={uid, 'GID'})
         groups = pd.DataFrame()
         groups.loc[:, uid] = list(set(list(set(list(joined_table[left_id])+list(joined_table[right_id]))))) #all zones that are touching
         groups.loc[:, 'GID'] = 0 #set group id to 0

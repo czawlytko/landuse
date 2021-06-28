@@ -171,7 +171,7 @@ def joinData(cf, psegs, remove_columns):
                 if len(vcols) == 0:
                     checkCBP = []
                     for col in tabledf.columns:
-                        if 'VALUE' in col:
+                        if 'VALUE_' in col:
                             checkCBP.append(col)
                     if len(checkCBP) > 0: # the LUZ mask used VALUE_#, check CBP mask RAT for # to LUZ name relationship
                         cbp_dbf_paths = [f'{folder}/{cf}/input/cbp_lu_mask.tif.vat.dbf',
@@ -209,22 +209,31 @@ def joinData(cf, psegs, remove_columns):
                                         lu_name = 'no_luz'
                                     else:
                                         lu_name = lu_name.upper()
-                                    if lu_name in luconfig.LUZ_values:
+                                    if lu_name != 'no_luz' and lu_name in luconfig.LUZ_values:
                                         if lu_name in vcols: # name already exists - check RAT?
                                             raise TypeError(f'LUZ table error: CBP mask RAT has duplicate name {lu_name}')
                                         vcols.append(lu_name)
                                         tabledf = tabledf.rename(columns={old_name:lu_name})
                                         print(f"renamed {old_name} to {lu_name} using CBP mask dbf")
+                            if 'VALUE_0' in list(tabledf) and 'no_luz' not in list(tabledf):
+                                vcols.append('no_luz')
+                                tabledf = tabledf.rename(columns={'VALUE_0':'no_luz'})
+                                print(f"renamed VALUE_0 to no_luz")
+
 
                 # Get max LUZ value
-                print(f"kept value columns: {vcols}")
                 new_col_name = f'{zoneID[0].lower()}_{dname.split("_")[0]}' # make p_luz or s_luz
-                tabledf[new_col_name] = tabledf[vcols].idxmax(axis=1)
-                for drop_col in vcols:
-                    tabledf = tabledf.drop(drop_col, axis=1)
+                if len(vcols) > 0:
+                    print(f"kept value columns: {vcols}")
+                    tabledf[new_col_name] = tabledf[vcols].idxmax(axis=1)
+                    for drop_col in vcols:
+                        tabledf = tabledf.drop(drop_col, axis=1)
 
-                print(f'merging {dname} to psegs by {zoneID}')
-                psegs = psegs.merge(tabledf, on=zoneID, how='left')
+                    print(f'merging {dname} to psegs by {zoneID}')
+                    psegs = psegs.merge(tabledf, on=zoneID, how='left')
+                else:
+                    print(f"no luz data for {zoneID} - creating no_luz column")
+                    psegs.loc[:, new_col_name] = 'no_luz'
 
             if dname in ('s_area', 'p_area'):
                 print(dname, " - group 2 (areas)")

@@ -381,8 +381,7 @@ def splitTiles(bufDist, grid, psegs_sidx):
                 fixed_tiles.loc[:, 'cnt'] = hits_list
                 fixed_tiles = fixed_tiles[fixed_tiles['cnt'] > 0]
                 fixed_tiles.crs = 'EPSG:5070'
-                st_id = int(np.nanmax(grid['id'])) + 1
-                fixed_tiles.loc[:, 'id'] = [int(x) for x in range(st_id, st_id+len(fixed_tiles))]
+                fixed_tiles.loc[:, 'id'] = [int(x) for x in range(1, len(fixed_tiles)+1)]
                 fixed_tiles.loc[:, 'row'] = 1
                 fixed_tiles.loc[:, 'col'] = [int(i) for i in range(1, len(fixed_tiles)+1)]
                 fixed_tiles = splitTileHelper(fixed_tiles, psegs_sidx)

@@ -333,9 +333,7 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     lu2017df = lu2017df[(lu2017df['Class_name'] == lu2017df['T1LC'])] # remove records where LC types don't match
     cols = [x for x in list(lu2017df) if x not in ['SID', 'Class_name']]
     lu2017df = lu2017df[cols].groupby(['zone', 'T1LC', 'chg_area']).agg('sum').reset_index() #sum all non-wetland LUs by zone
-    cols.remove('zone')
-    cols.remove('T1LC')
-    cols.remove('chg_area')
+    cols = [x for x in list(lu2017df) if x not in ['zone', 'T1LC', 'chg_area']]
     print(cols)
     # REMOVE COLUMNS WHERE MAX IS < 25% OF SEG AREA
     lu2017df.loc[:, 'pct_lu'] = lu2017df[cols].max(axis=1) / lu2017df['chg_area']
@@ -541,7 +539,10 @@ def run_lu_change(cf, lu_type):
     chg_tab = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', lc_change_ras_path, list(lc_change_dict.values()), ['zone', 'LC_Chg_Val'], False, True)
     for i in list(set(list(chg_tab['LC_Chg_Val']))):
         if i > 0:
-            chg_tab.loc[chg_tab['LC_Chg_Val'] == i, 'LC Change'] = list(change_df[change_df['Value'] == i]['Description'])[0]
+            try:
+                chg_tab.loc[chg_tab['LC_Chg_Val'] == i, 'LC Change'] = list(change_df[change_df['Value'] == i]['Description'])[0]
+            except:
+                raise TypeError(f"{i} does not exist in LC Change XML")
     etime(cf, 'Ran zonal stats majority on LC change - change segs', st)
     st = time.time()
     

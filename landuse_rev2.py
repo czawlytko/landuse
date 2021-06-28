@@ -471,7 +471,8 @@ def p_maj_lu(cf, psegs, lc_vals, exclusions, threshold, batch_size, maj_replace)
     lu_values = list(set(list(no_lu_df['lu']))) # unique land use values
 
     if len(lu_values) > 0:
-        lu_values.remove(None)
+        if None in lu_values:
+            lu_values.remove(None)
         if 'ag_gen' in lu_values:
             lu_values.remove('ag_gen')
             print(f'removing ag_gen from useable lu_values')
