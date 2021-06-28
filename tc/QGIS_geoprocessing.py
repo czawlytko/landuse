@@ -8,13 +8,18 @@ Contact: lahmed@chesapeakebay.net
 from timeit import default_timer as timer
 from pathlib import Path
 import geopandas as gpd
-from qgis.core import *
-from qgis.PyQt.QtCore import QVariant
 from shapely.geometry import shape, MultiPolygon, Polygon
 import multiprocessing as mp
 import itertools
 import sys
 import multiprocessing as mp #testing lock
+import os
+
+# Disable QT Platform display parameter for headless instances
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
+from qgis.core import *
+from qgis.PyQt.QtCore import QVariant
 
 def read_gpkg(gpkg_path):
     """
