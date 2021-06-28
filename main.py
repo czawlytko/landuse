@@ -19,7 +19,7 @@ import luconfig
 from helpers import etime
 import helpers
 import landuse_rev2 as landuse
-import tc.TC_LU_Submodule_v1 as trees_over
+import tc.TC_LU_Submodule_noq_v1 as trees_over
 from tc.createTiles_v1 import createTiles
 import burn_in
 import lu_change.lu_change_vector_v1_callable as lu_change_module
@@ -32,7 +32,7 @@ def intro(cflist):
     print(f'\n\nS  T  A  R  T \n{time.asctime()}')
     print(f'Revision 2 - Last edited: 6/3/2021')
 
-    b_log = open(batch_log_Path, "a")
+    b_log = open(batch_log_Path, "a+")
     b_log.write(f'\nStart Batch {str(time.asctime)}\n--{os.path.basename(__file__)}')
     b_log.write(f'--Batch CF List: {cflist}')
     b_log.write(f'\n--Cores Available: {mp.cpu_count()}')
@@ -110,11 +110,11 @@ if __name__ == "__main__":
                 del psegs # maybe remove?
 
             # TREE CANOPY MAIN
-            try:
-                trees_over.run_trees_over_submodule(luconfig.TC_CPUS, cf)
-            except:
-                write_error(cf, 'Tree Canopy', traceback.format_exc(), luconfig.batch_error_log_Path)
-                continue
+            # try:
+            trees_over.run_trees_over_submodule(luconfig.TC_CPUS, cf)
+            # except:
+            #     write_error(cf, 'Tree Canopy', traceback.format_exc(), luconfig.batch_error_log_Path)
+            #     continue
         else:
             print('\nTC already complete')
         # BURN IN
