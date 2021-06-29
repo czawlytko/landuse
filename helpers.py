@@ -79,6 +79,12 @@ def files_exist(file_list):
             exit()
     return file_exist_flag
 
+def bash_command(cmd):
+    # run a bash command and wait for process to finish
+    p1 = subprocess.Popen(cmd, shell=True, executable='/bin/bash')
+    p1.wait()
+
+
 def transfer_files(source, destination):
     global pid_list
     # check if files exist:

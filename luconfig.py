@@ -1,6 +1,6 @@
 anci_folder = f'/home/azureuser/azData/ancillary-v1/'
 folder = f'/home/azureuser/azData/version1/'
-batch_size = 10000 # used in landuse_rev2 and TC_LU_Submodule_v1
+batch_size = 100000 # used in landuse and TC, INTEGRATE INTO BURN IN
 batch_log_Path = f"{folder}/batch_log.txt"
 batch_error_log_Path = f'{folder}/batch_error_log.txt'
 crosswalk_csv = r'lu_change/P6RollUpLUCrosswalk.csv' 
@@ -23,7 +23,7 @@ anci_dict = {
     'UACPath' : r"census/tl_2018_uac10_baycounties20m_AEAC.shp", # updated 4/27/21
     'timHarRasPath' : r'lcmap/10m_timbHarv/Primary_2y_10m.tif', # lcmap primary patterns with timber harvest class
     'sucAgeRasPath' : r'lcmap/10m_timbHarv/Sucess_Age_10m.tif', # lcmp succession age
-}
+        }
 
 
 dp_file_list = [

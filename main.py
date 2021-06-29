@@ -75,10 +75,22 @@ if __name__ == "__main__":
 
     etime("batch", f"Start Batch: {cflist}", time.time())
 
+    print('Attempting to mount blob')
+    fuse_st = time.time()
+    connect2fuse = "blobfuse /home/azureuser/abData --tmp-path=/mnt/resource/blobfusetmp  --config-file=/home/azureuser/fuse_connection.cfg -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120"
+    helpers.bash_command(connect2fuse)
+    etime("batch", "mount blobfuse", fuse_st)
+
     for cf in cflist: # replace with args/CLI after testing
         print('--Main.py Test:', test, type(test))
         print("--batch_size: ", batch_size)
         cf_st = time.time()
+
+        copy_st = time.time()
+        copy_input = f"cp -R /home/azureuser/abData/version1/{cf} /home/azureuser/azData/version1"
+        helpers.bash_command(copy_input)
+        helpers.bash_command("ls -la")
+        etime(cf, "Copied data from blobfuse", copy_st)
 
         # LAND USE
         if not os.path.isfile(f'{luconfig.folder}/{cf}/output/data.gpkg'):
@@ -139,5 +151,11 @@ if __name__ == "__main__":
             except:
                 write_error(cf, 'LU Change', traceback.format_exc(), luconfig.batch_error_log_Path)
                 continue
+
+        copy_st2 = time.time()
+        copy_output = f"cp -R /home/azureuser/azData/version1/{cf}/output /home/azureuser/abData/version1/{cf}"
+        helpers.bash_command(copy_output)
+        etime(cf, "Copied outputs to blobfuse", copy_st2)
+
 
         etime("batch", f"{cf} Completed full run", cf_st)

@@ -249,8 +249,13 @@ def sjoin_and_border(args):
     returns: turf_psid_list
     """
     dft = time.time()
-    df1, df2, btype, minborder = args
-
+    df1, df2, btype, minborder, chunk_num = args
+    #### for debugging memory bottle neck, helped determine batch_size
+    # print(f'chunk # {chunk_num}')
+    # print('sjb df1 mem: ', df1.memory_usage())
+    # print('sjb df1 len: ', len(df1))
+    # print('sjb df2 mem: ', df2.memory_usage())
+    # print('sjb df2 len: ', len(df2))
     sjt = time.time()
     sjoinSeg = gpd.sjoin(df1, df2, how='inner', op='intersects')
 
@@ -268,7 +273,6 @@ def sjoin_and_border(args):
             count += 1
             lvGeo = list(df1[df1['PSID'] == lv]['geometry'])[0]
             try:
-
                 border = buildingGeo.intersection(lvGeo)  # get multi-line
                 blength = border.length
                 if btype == 'minimum': # if border type is minimum, only pass if greater minimum shared border length
@@ -388,7 +392,8 @@ def adjacency_mp(psegs, newlu, newlogic, df1, df2, btype, minborder, batch_size)
     chunk_iterator = []
     for i in range(0, num_chunks):
         mn, mx = i * batch_size, (i + 1) * batch_size
-        gdf_args = df1[mn:mx], df2, btype, minborder
+        chunk_num = i
+        gdf_args = df1[mn:mx], df2, btype, minborder, chunk_num
         chunk_iterator.append(gdf_args)
 
     bordering_results = pool.map(sjoin_and_border, chunk_iterator)
@@ -681,33 +686,6 @@ def solar(psegs, ancipath, newlogic):
             psegs.loc[psegs["SID"] == i, 'lu'] = f"Solar {myClass_name}"
 
     etime(cf, psegs,  "solar", solar_st)
-
-
-## TODO REMOVE, OLD
-def here(psegs, ancipath, newlu, newlogic):
-
-    anci = read_anci(anci_folder,ancipath, psegs.envelope)
-
-    if anci.empty:
-        print('passing on here()... Check file! ')
-        pass
-
-    else:
-        print(f"{len(anci)} rows")
-        lvdf = psegs[(psegs.lu.isna()) & (psegs.Class_name == 'Low Vegetation')]
-        lvdf = lvdf[['SID', 'geometry', 's_area', 'lu']]  # add  needed fields
-        print(f'{os.path.basename(ancipath)} \n-read time: {round(time.time() - here_st)} sec')
-
-        sjt = time.time()
-        sj = gpd.sjoin(anci, lvdf, how='inner', op='intersects')  # inner = len:640, 12-20sec
-        # print(f'--sjoin time: {round(time.time() - sjt)} sec')
-
-        for i in sj.SID.unique():
-            psegs.loc[psegs["SID"] == i, 'logic'] = newlogic
-            psegs.loc[psegs["SID"] == i, 'lu'] = newlu
-
-    print(f'{len(sj.SID.unique())} segs found with HERE data')
-    etime(cf, psegs,  f"HERE ", here_st)
 
 
 def lcmap_timber_mp(psegs, thlu, thlogic, nslu, nslogic, df1, anci_folder, timHarRasPath, sucAgeRasPath, batch_size):
