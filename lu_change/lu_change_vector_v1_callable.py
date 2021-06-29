@@ -605,13 +605,14 @@ def run_lu_change(cf, lu_type):
         lc_change_gdf['T1_LU_Code'] = lc_change_gdf.T1_LU_Code.astype(int)
     except:
         print("Could not convert T1_LU_Code to int ")
-        t1_codes = list(set(list(lc_change_gdf['T1_LU_Code'])))
-        bad_codes = []
-        for code in t1_codes:
-            if lch.get_lu_code(code, True) == 'Null':
-                bad_codes.append(code)
-        # print(bad_codes)
-        lc_change_gdf[(lc_change_gdf['T1_LU_Code'].isin(bad_codes))|(lc_change_gdf['T1_LU_Code'].isna())].to_csv(os.path.join(output_path, f"{cf}_bad_t1_code_{lu_type}.csv"), index=False)
+        # t1_codes = list(set(list(lc_change_gdf['T1_LU_Code'])))
+        # bad_codes = []
+        # for code in t1_codes:
+        #     if lch.get_lu_code(code, True) == 'Null':
+        #         bad_codes.append(code)
+        # # print(bad_codes)
+        # lc_change_gdf[(lc_change_gdf['T1_LU_Code'].isin(bad_codes))|(lc_change_gdf['T1_LU_Code'].isna())].to_csv(os.path.join(output_path, f"{cf}_bad_t1_code_{lu_type}.csv"), index=False)
+        print(lc_change_dict)
 
     for i in list(set(list(lc_change_gdf['T1_LU_Code']))):
         lc_change_gdf.loc[lc_change_gdf['T1_LU_Code'] == i, 'T1_LU'] = lch.get_lu_code(i, True)
@@ -621,13 +622,15 @@ def run_lu_change(cf, lu_type):
     lc_change_gdf = lc_change_gdf[['zone', 'T1_LU_Code', 'T1_LU', 'T2 LU', 'LC_Change', 'Method', 'TYPE', 'Type_log', 'GRP_TYPE', 'LC_Chg_Val', 'PID', 'Acres', 'geometry']]
     lc_change_gdf.to_file(os.path.join(temp_path, f"{cf}_LU_change_{lu_type}.shp"))
 
-    if 0 in list(lc_change_gdf['T1_LU_Code']) or -1 in list(lc_change_gdf['T1_LU_Code']):
+    if len(lc_change_gdf[(lc_change_gdf['T1_LU_Code'].isin([0,-1]))|(lc_change_gdf['T1_LU_Code'].isna())]):
+    # if 0 in list(lc_change_gdf['T1_LU_Code']) or -1 in list(lc_change_gdf['T1_LU_Code']):
         print("\n***********************************************************************************")
         print("Missing T1 LU for ", len(lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])]), " segments")
         print("Check ", os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"))
         print("***********************************************************************************\n")
-        lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])].to_csv(os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"), index=False)
-
+        cols = [x for x in list(lc_change_gdf) if x != 'geometry']
+        lc_change_gdf[(lc_change_gdf['T1_LU_Code'].isin([0,-1]))|(lc_change_gdf['T1_LU_Code'].isna())][cols].to_csv(os.path.join(output_path, f"{cf}_missed_segs_{lu_type}.csv"), index=False)
+        raise TypeError(f"Check {cf}_missed_segs_{lu_type}.csv")
     etime(cf, 'Write vector LU change', st)
     st = time.time()
 
