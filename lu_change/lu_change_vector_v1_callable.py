@@ -538,6 +538,7 @@ def run_lu_change(cf, lu_type):
     # Tag change raster with majority LC change class and majority T2 LU class
     chg_tab = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', lc_change_ras_path, list(lc_change_dict.values()), ['zone', 'LC_Chg_Val'], False, True)
     for i in list(set(list(chg_tab['LC_Chg_Val']))):
+        i = int(i)
         if i > 0:
             try:
                 chg_tab.loc[chg_tab['LC_Chg_Val'] == i, 'LC Change'] = list(change_df[change_df['Value'] == i]['Description'])[0]

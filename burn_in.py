@@ -669,7 +669,7 @@ def reclassComputeNontidal(lc_array, rail_array, wetlands_array, lu_array, tc_ar
     dst_array[np.where ( (lc_array==12))] = 2141 # TC over Roads
     #more tc
     dst_array[np.where ( (tc_array==2240) & (lc_array==3))] = 2240 #TC over turf
-    dst_array[np.where ( (tc_array==3200))] = 3200 #TC over ag
+    dst_array[np.where ( (tc_array==3200) & (lc_array==3))] = 3200 #TC over ag
 
     # ponds
     dst_array[np.where ( ((lu_array==1000) | (lc_array == 1)) & (pond_array==1) )] = 1120

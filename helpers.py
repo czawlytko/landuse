@@ -295,10 +295,10 @@ def rasFinder(dir, pattern):
             break
 
     if not os.path.exists(foundRas):
-        print(f"ERROR! Failed to open foundRas: {foundRas}\n--dir: {dir}\n--pattern: {pattern}" )
-        exit()
+        raise TypeError(f"ERROR! Failed to open foundRas: {foundRas}\n--dir: {dir}\n--pattern: {pattern}" )
+        # exit()
 
-    return foundRas
+    return foundRas 
 
 def memCheck():
     print(psutil.virtual_memory())
