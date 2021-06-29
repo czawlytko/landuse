@@ -24,6 +24,7 @@ from shapely.geometry import mapping, shape, MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 import shutil
 from pathlib import Path
+import platform
 
 import tc.dense_mp_v1 as env_pkg
 from tc.dense_mp_v1 import dense as callDense
@@ -36,36 +37,34 @@ from helpers import etime
 """
 Got these from: https://stackoverflow.com/questions/6974695/python-process-pool-non-daemonic
 """
-# class NoDaemonProcess(mp.Process):
-#     # make 'daemon' attribute always return False
-#     def _get_daemon(self):
-#         return False
-#     def _set_daemon(self, value):
-#         pass
-#     daemon = property(_get_daemon, _set_daemon)
-
-# # We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
-# # because the latter is only a wrapper function, not a proper class.
-# class MyPool(mp.pool.Pool):
-#     freeze_support()
-#     Process = NoDaemonProcess
-
 class NoDaemonProcess(mp.Process):
+    # make 'daemon' attribute always return False
+    def _get_daemon(self):
+        return False
+    def _set_daemon(self, value):
+        pass
+    daemon = property(_get_daemon, _set_daemon)
+
+# We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
+# because the latter is only a wrapper function, not a proper class.
+class WinPool(mp.pool.Pool):
+    freeze_support()
+    Process = NoDaemonProcess
+
+#LINUX CLASSES
+class NoDaemonProcessLinux(mp.Process):
     @property
     def daemon(self):
         return False
-
     @daemon.setter
     def daemon(self, value):
         pass
-
 class NoDaemonContext(type(mp.get_context())):
-    Process = NoDaemonProcess
-
-class MyPool(mp.pool.Pool):
+    Process = NoDaemonProcessLinux
+class LinuxPool(mp.pool.Pool):
     def __init__(self, *args, **kwargs):
         kwargs['context'] = NoDaemonContext()
-        super(MyPool, self).__init__(*args, **kwargs)
+        super(LinuxPool, self).__init__(*args, **kwargs)
 
 #####################################################################################
 #------------------------------- MAIN ------------- --------------------------------#
@@ -89,11 +88,11 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     if NUM_TILES < 1:
         print("ERROR: Core distribution would result in 0 tiles running at a time")
         print("\tIncrease cores or decrease NUM_CPUS")
-        sys.exit(0)
+        raise TypeError("TC ERROR: Core distribution would result in 0 tiles running at a time")
     elif NUM_TILES == 1:
         print("ERROR: Core distribution would result in 1 tile running at a time")
         print("\tIf you want to run serially, comment out sys.exit below this message")
-        sys.exit(0)
+        raise TypeError("TC ERROR: Core distribution would result in 1 tile running at a time")
     else:
         print("Running ", NUM_TILES, " tiles at a time")
         print("Each tile will have ", NUM_CPUS, " cores")
@@ -111,9 +110,9 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     tiles_shp = f"{folder}/{cf}/temp/tc_tiles.shp" 
     
     #location of temp files needed for QGIS workflows will be written - can delete these after
-    qgis_temp_files_path = Path(folder,cf,"temp_TC_files")
-    if not os.path.exists(qgis_temp_files_path):
-        os.makedirs(qgis_temp_files_path)
+    tmp_tc_path = Path(folder,cf,"temp_TC_files")
+    if not os.path.exists(tmp_tc_path):
+        os.makedirs(tmp_tc_path)
 
     print("\n***********************************")
     print(  "********* TREE CANOPY *************")
@@ -183,10 +182,14 @@ def run_trees_over_submodule(NUM_CPUS, cf):
         #get list of data needed for each tile
         chunk_iterator.append( (psegs, allAg, allTurf, row['id'], cf, NUM_CPUS) )
 
-    #pull processors
+    # pull processors
     print("\n")
-    pool = MyPool(NUM_TILES)
-    # pool = mp.Pool(NUM_TILES) #Make non daemon threads to call mp functions from threads
+    if platform.system() == 'Linux':
+        pool = LinuxPool(NUM_TILES)
+    elif platform.system() == 'Windows':
+        pool = WinPool(NUM_TILES)
+    else:
+        raise TypeError(f"OS System not Windows or Linux: {platform.system()}")
     data = pool.map(runTCT, chunk_iterator)
     pool.close()
     pool.join()
@@ -239,8 +242,8 @@ def run_trees_over_submodule(NUM_CPUS, cf):
     etime(cf, "Total write ", st)
     st = time.time()
 
-    deleteTempFiles(cf)
-    etime(cf, "Deleted temp folder", st)
+    # deleteTempFiles(cf)
+    # etime(cf, "Deleted temp folder", st)
 
     etime(cf, "Tree Canopy Model - run_trees_over_submodule()", start)
     return 0
@@ -638,10 +641,10 @@ def deleteTempFiles(cf):
     Returns: N/A
     """
     folder = luconfig.folder
-    qgis_temp_files_path = Path(folder,cf,"temp_TC_files")
-    if os.path.isdir(qgis_temp_files_path):
+    tmp_tc_path = Path(folder,cf,"temp_TC_files")
+    if os.path.isdir(tmp_tc_path):
         try:
-            shutil.rmtree(qgis_temp_files_path)
+            shutil.rmtree(tmp_tc_path)
         except:
             etime(cf, 'Remove temp qgis folder failed', time.time()) 
 

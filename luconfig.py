@@ -1,5 +1,5 @@
-anci_folder = f'/home/azureuser/azData/ancillary-v1/'
-folder = f'/home/azureuser/azData/version1/'
+anci_folder = f'/home/azureuser/azData/ancillary-v1'
+folder = f'/home/azureuser/azData/version1'
 batch_size = 100000 # used in landuse and TC, INTEGRATE INTO BURN IN
 batch_log_Path = f"{folder}/batch_log.txt"
 batch_error_log_Path = f'{folder}/batch_error_log.txt'

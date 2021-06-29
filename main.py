@@ -87,6 +87,7 @@ if __name__ == "__main__":
         cf_st = time.time()
 
         copy_st = time.time()
+        print('copying {cf} data to azData folder')
         copy_input = f"cp -R /home/azureuser/abData/version1/{cf} /home/azureuser/azData/version1"
         helpers.bash_command(copy_input)
         helpers.bash_command("ls -la")

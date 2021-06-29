@@ -57,6 +57,17 @@ def checkFile(fPath): # used for all anci data
         pass
 
 def checkCounty(cf):
+    outfolder = f"{luconfig.folder}/{cf}/output"
+    if not os.path.isdir(outfolder):
+        try:
+            print("making output folder at {outfolder}")
+            os.mkdir(outfolder)
+        except:
+            print('failed to make output folder... exiting')
+            sys.exit()
+    else:
+        print(f"--outfolder exists: {outfolder}")
+
     for k,v in luconfig.anci_dict.items():
         checkFile(Path(luconfig.anci_folder, v))
     print('--Ancillary data check: COMPLETE')
