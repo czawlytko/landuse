@@ -24,6 +24,7 @@ from shapely.geometry import mapping, shape, MultiPolygon, Point, Polygon
 from shapely.ops import unary_union
 import shutil
 from pathlib import Path
+import platform
 
 import tc.dense_mp_v1 as env_pkg
 from tc.dense_mp_v1 import dense as callDense
