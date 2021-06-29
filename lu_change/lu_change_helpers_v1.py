@@ -1135,9 +1135,10 @@ def indirectBarr(barr_gdf, lu_change_gdf,):
             lu_change_gdf - lu change gdf to update
     Returns: lu_change_gdf - updated lu change
     """
-    lu_change_gdf.loc[(lu_change_gdf['TYPE']=='crop') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Cropland Barren', False)
-    lu_change_gdf.loc[(lu_change_gdf['TYPE']=='pasture') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Pasture/Hay Barren', False)
-    lu_change_gdf.loc[(lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Natural Succession Barren', False) 
+    rem_zones = list(barr_gdf['zone'])
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='crop') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Cropland Barren', False)
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='pasture') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Pasture/Hay Barren', False)
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Natural Succession Barren', False) 
 
     return lu_change_gdf
 
