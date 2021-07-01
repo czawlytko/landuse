@@ -164,18 +164,22 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
         parcel_groups = parcel_groups.rename(columns={'GID':'PAR_GID'})
         lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'PAR_GID']], how='left')
         gids = list(set(list(parcel_groups['PAR_GID'])))
-        # Get majority TYPE for each unique GID
-        for gid in gids:
-            # if some are equal counts, use mode to get list to give precendence to ag classes
-            types = list(lc_change_gdf[lc_change_gdf['PAR_GID'] == gid][['TYPE']].mode()['TYPE']) 
-            if 'crop' in types:
-                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'crop'
-            elif 'pasture' in types:
-                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'pasture'
-            else:
-                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'other'
-        
-        lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'GRP_TYPE']],on='PID', how='left')
+        print("length of gids: ", len(gids))
+        if len(gids) > 0:
+            # Get majority TYPE for each unique GID
+            for gid in gids:
+                # if some are equal counts, use mode to get list to give precendence to ag classes
+                types = list(lc_change_gdf[lc_change_gdf['PAR_GID'] == gid][['TYPE']].mode()['TYPE']) 
+                if 'crop' in types:
+                    parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'crop'
+                elif 'pasture' in types:
+                    parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'pasture'
+                else:
+                    parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'other'
+            
+            lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'GRP_TYPE']],on='PID', how='left')
+        else:
+            lc_change_gdf.loc[:, 'GRP_TYPE'] = None
     else:
         lc_change_gdf.loc[:, 'GRP_TYPE'] = None
 

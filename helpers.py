@@ -63,7 +63,8 @@ def checkCounty(cf):
 
     if cf[5:7] in luconfig.st_dict:
         stabv = luconfig.st_dict[cf[5:7]]
-            
+    elif cf=='elk_42047':
+        print('elk exception on check county')
     else:
         print(f'ERROR!\n\t{cf} is not an approved state fips code')
         print(st_dict)

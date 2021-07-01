@@ -876,10 +876,13 @@ def RUN(cf, test):
     # State specific file paths
     st_dict = luconfig.st_dict
 
-    if st_dict[cf[5:7]] == 'PA':
+    if cf== 'elk_42047':
         timberPath = Path(anci_folder, anci_dict['PAtimberPath'])
-    if st_dict[cf[5:7]] == 'MD':
-        timberPath = Path(anci_folder, anci_dict['MDtimberPath']) 
+    else:
+        if st_dict[cf[5:7]] == 'PA':
+            timberPath = Path(anci_folder, anci_dict['PAtimberPath'])
+        if st_dict[cf[5:7]] == 'MD':
+            timberPath = Path(anci_folder, anci_dict['MDtimberPath']) 
 
     ###  ACTION ********************************************************
     # try:
@@ -1025,13 +1028,19 @@ def RUN(cf, test):
     print(f'--Start majority lu (1 of 3) including {maj_lc_vals} - {time.asctime()}')
     p_maj_lu(cf, psegs, maj_lc_vals, maj_lu_exclusions, 0.50, int(1e6), maj_replace=False) # psegs, lc values to include, parcel area threshold (percentage as a decimal)
 
-    if st_dict[cf[5:7]] in ('PA', 'MD'):
+    if cf=='elk_42047':
         st_timb = time.time()
         df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']))]
         sjoin_mp(psegs, "Natural Succession", "timber sjoin", df1, anci_folder, timberPath, batch_size)
         etime(cf, psegs,   "State Timber Harvest anci sjoin", st_timb)
     else:
-        print('Skipping State Timber Harvest anci sjoin, no anci for state')
+        if st_dict[cf[5:7]] in ('PA', 'MD'):
+            st_timb = time.time()
+            df1 = psegs[(psegs.lu.isna()) & (psegs.Class_name.isin(['Low Vegetation', 'Barren', 'Scrub\\Shrub']))]
+            sjoin_mp(psegs, "Natural Succession", "timber sjoin", df1, anci_folder, timberPath, batch_size)
+            etime(cf, psegs,   "State Timber Harvest anci sjoin", st_timb)
+        else:
+            print('Skipping State Timber Harvest anci sjoin, no anci for state')
 
     # LCMAP
     th_st = time.time()
