@@ -485,52 +485,57 @@ def p_maj_lu(cf, psegs, lc_vals, exclusions, threshold, batch_size, maj_replace)
 
         # print("lu_areas_list: ", lu_areas_list)
         # merge all area estimates into one df on PID
-        lu_area_df = lu_areas_list[0].copy()
-        for l in range(1, len(lu_areas_list)): 
-            lu_area_df = lu_area_df.merge(lu_areas_list[l], on=['PID'], how='outer')
-        # get max lu name and area
 
-        lu_area_df['max_lu'] = lu_area_df[lu_values].idxmax(axis=1) # max lu name
-        lu_area_df['lu_area'] = lu_area_df[lu_values].max(axis=1) # max area value
-        # print("lu_area_df: ",lu_area_df)
+        if len(lu_areas_list) > 0:
+            print(f'--lu_areas_list > 0 ({len(lu_areas_list)})')
+            lu_area_df = lu_areas_list[0].copy()
+            for l in range(1, len(lu_areas_list)): 
+                lu_area_df = lu_area_df.merge(lu_areas_list[l], on=['PID'], how='outer')
+                
+            # get max lu name and area
+            lu_area_df['max_lu'] = lu_area_df[lu_values].idxmax(axis=1) # max lu name
+            lu_area_df['lu_area'] = lu_area_df[lu_values].max(axis=1) # max area value
+            # print("lu_area_df: ",lu_area_df)
 
-        #remove all uneeded results columns
-        cols = ['PID', 'max_lu', 'lu_area']
-        lu_area_df = lu_area_df[cols]
-        # add parcel area and get % area?
-        # get segments of specific classes and sum all segs of classes by PID
-        tot_class_area = psegs[psegs['Class_name'].isin(lc_vals)][['PID', 'geometry']]
+            #remove all uneeded results columns
+            cols = ['PID', 'max_lu', 'lu_area']
+            lu_area_df = lu_area_df[cols]
+            # add parcel area and get % area?
+            # get segments of specific classes and sum all segs of classes by PID
+            tot_class_area = psegs[psegs['Class_name'].isin(lc_vals)][['PID', 'geometry']]
 
-        if len(tot_class_area) > 6 * 1e6: # greater than 6 mil?
-            num_chunks = int((len(tot_class_area) / 1e6) + 1)
-            for i in range(0, num_chunks):
-                print(f"{i}/{num_chunks}")
-                mn, mx = i * batch_size, (i + 1) * batch_size
-                mn = int(mn)
-                mx = int(mx)
-                print(f"calculating ps_area for chunk: {i}/{num_chunks} PSID {mn} thru {mx}")
-                tot_class_area.loc[mn:mx, 'ps_area'] = tot_class_area[mn:mx].geometry.area
+            if len(tot_class_area) > 6 * 1e6: # greater than 6 mil?
+                num_chunks = int((len(tot_class_area) / 1e6) + 1)
+                for i in range(0, num_chunks):
+                    print(f"{i}/{num_chunks}")
+                    mn, mx = i * batch_size, (i + 1) * batch_size
+                    mn = int(mn)
+                    mx = int(mx)
+                    print(f"calculating ps_area for chunk: {i}/{num_chunks} PSID {mn} thru {mx}")
+                    tot_class_area.loc[mn:mx, 'ps_area'] = tot_class_area[mn:mx].geometry.area
+            else:
+                tot_class_area['ps_area'] = tot_class_area.geometry.area
+
+            tot_class_area = tot_class_area[['PID', 'ps_area']]
+            tot_class_area = tot_class_area .groupby(['PID']).sum()
+            tot_class_area = tot_class_area.reset_index()#bring PID back as column
+            tot_class_area.rename(columns={'ps_area':'tot_area'}, inplace=True) #rename total area column
+            lu_area_df = lu_area_df.merge(tot_class_area, on=['PID'], how='left') #merge total area with seg area
+            lu_area_df.loc[:, 'PctArea'] = lu_area_df['lu_area'] / lu_area_df['tot_area']
+            lu_area_df = lu_area_df[lu_area_df['PctArea'] > threshold]
+            
+            #loop through and apply land use
+            max_lus = list(set(list(lu_area_df['max_lu']))) # unique lu values
+            print("majority lu value: ", max_lus)
+            for lu in max_lus:
+                pids = list(set(list(lu_area_df[lu_area_df['max_lu'] == lu]['PID']))) # unique parcels with current lu
+                # get unique psids with no lu and that have a maj parcel lu
+                psids = list(set(list(psegs[((psegs.lu.isna()) | (psegs.lu == 'ag_gen')) & (psegs.Class_name.isin(lc_vals)) & (psegs.PID.isin(pids))]['PSID'])))
+                psegs.loc[psegs['PSID'].isin(psids), 'lu'] = lu
+                psegs.loc[psegs['PSID'].isin(psids), 'logic'] =  'majority lu > ' + str(threshold) + " and MajRep:" + str(maj_replace) 
+            etime(cf, psegs, f'majority lu MajRep:{str(maj_replace)}', mlu_st)
         else:
-            tot_class_area['ps_area'] = tot_class_area.geometry.area
-
-        tot_class_area = tot_class_area[['PID', 'ps_area']]
-        tot_class_area = tot_class_area .groupby(['PID']).sum()
-        tot_class_area = tot_class_area.reset_index()#bring PID back as column
-        tot_class_area.rename(columns={'ps_area':'tot_area'}, inplace=True) #rename total area column
-        lu_area_df = lu_area_df.merge(tot_class_area, on=['PID'], how='left') #merge total area with seg area
-        lu_area_df.loc[:, 'PctArea'] = lu_area_df['lu_area'] / lu_area_df['tot_area']
-        lu_area_df = lu_area_df[lu_area_df['PctArea'] > threshold]
-        
-        #loop through and apply land use
-        max_lus = list(set(list(lu_area_df['max_lu']))) # unique lu values
-        print("majority lu value: ", max_lus)
-        for lu in max_lus:
-            pids = list(set(list(lu_area_df[lu_area_df['max_lu'] == lu]['PID']))) # unique parcels with current lu
-            # get unique psids with no lu and that have a maj parcel lu
-            psids = list(set(list(psegs[((psegs.lu.isna()) | (psegs.lu == 'ag_gen')) & (psegs.Class_name.isin(lc_vals)) & (psegs.PID.isin(pids))]['PSID'])))
-            psegs.loc[psegs['PSID'].isin(psids), 'lu'] = lu
-            psegs.loc[psegs['PSID'].isin(psids), 'logic'] =  'majority lu > ' + str(threshold) + " and MajRep:" + str(maj_replace) 
-        etime(cf, psegs, f'majority lu MajRep:{str(maj_replace)}', mlu_st)
+            print(f'--lu_areas_list is empty... ({len(lu_areas_list)})')
     else:
         print(f"lu_values is empty...\n {lu_values} \n Full psegs lu:{psegs.lu.unique()}")
 
