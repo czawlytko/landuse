@@ -134,6 +134,8 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
     parcels_gdf = parcels_gdf.merge(tab_area_df, on='PID', how='left')
     del stuct_df
 
+    print("NEW PARCELS LIST LEN: ", len(new_parcels_list))
+
     # add LVB no change in new structure parcels
     # use geoms in parcels_gdf to mask change ras - vectorize LV and Barren
     parcels = [(row['PID'], row['geometry']) for idx, row in parcels_gdf.iterrows()]
@@ -142,6 +144,7 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
         ]
     # vectorized LVB in parcels that are newly developed - with pid
     lvb_gdf = lch.maskRasByGeom_mp(lc_change_ras_path, lu_2017_ras_path, parcels, lvb) # vector of LVB in newly dev parcels who are TG in T2
+    print("LVB WITHIN NEWLY DEV PARCELS LEN: ", len(lvb_gdf))
     if len(lvb_gdf) > 0:
         lvb_gdf = lvb_gdf[['PID', 'geometry']]
         lvb_gdf = lvb_gdf.merge(tab_area_df[['PID','TYPE', 'Type_log']], on='PID', how='left')
@@ -149,6 +152,7 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
         max_zone = np.amax(lc_change_gdf['zone']+1)
         lvb_gdf.loc[:, 'zone'] = [int(x) for x in range(max_zone, len(lvb_gdf)+max_zone)]
         lvb_gdf = lvb_gdf[['zone', 'PID', 'TYPE', 'geometry']]
+        lvb_gdf.loc[:, 'LC_Change'] = 'Low Veg No Change' # added 6/29/21
         lvb_gdf.loc[:, 'Method'] = 'New Structure - Parcel'
         lvb_gdf.loc[:, 'T2_LU_Val'] = lch.get_lu_code('Turf Herbaceous', False)
         lvb_gdf.loc[:, 'T1_LU_Code'] = 0
@@ -164,22 +168,18 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
         parcel_groups = parcel_groups.rename(columns={'GID':'PAR_GID'})
         lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'PAR_GID']], how='left')
         gids = list(set(list(parcel_groups['PAR_GID'])))
-        print("length of gids: ", len(gids))
-        if len(gids) > 0:
-            # Get majority TYPE for each unique GID
-            for gid in gids:
-                # if some are equal counts, use mode to get list to give precendence to ag classes
-                types = list(lc_change_gdf[lc_change_gdf['PAR_GID'] == gid][['TYPE']].mode()['TYPE']) 
-                if 'crop' in types:
-                    parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'crop'
-                elif 'pasture' in types:
-                    parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'pasture'
-                else:
-                    parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'other'
-            
-            lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'GRP_TYPE']],on='PID', how='left')
-        else:
-            lc_change_gdf.loc[:, 'GRP_TYPE'] = None
+        # Get majority TYPE for each unique GID
+        for gid in gids:
+            # if some are equal counts, use mode to get list to give precendence to ag classes
+            types = list(lc_change_gdf[lc_change_gdf['PAR_GID'] == gid][['TYPE']].mode()['TYPE']) 
+            if 'crop' in types:
+                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'crop'
+            elif 'pasture' in types:
+                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'pasture'
+            else:
+                parcel_groups.loc[parcel_groups['PAR_GID'] == gid, 'GRP_TYPE'] = 'other'
+        
+        lc_change_gdf = lc_change_gdf.merge(parcel_groups[['PID', 'GRP_TYPE']],on='PID', how='left')
     else:
         lc_change_gdf.loc[:, 'GRP_TYPE'] = None
 
@@ -201,28 +201,27 @@ def runNewStructure(lc_change_gdf, parcels_gdf, lc_change_ras_path, lc_change_di
 
 
     # Assign T1 LU using GRP_TYPE where available, otherwise use TYPE
-    reclass_classes = optional_classes + lc_change_classes
+    reclass_classes = optional_classes + lc_change_classes + ['Low Veg No Change']
     g_zones = list(lc_change_gdf[(lc_change_gdf['PID'].isin(new_parcels_list))&(lc_change_gdf['LC_Change'].isin(reclass_classes))&(~lc_change_gdf['GRP_TYPE'].isna())]['zone'])
     zones = list(lc_change_gdf[(lc_change_gdf['PID'].isin(new_parcels_list))&(lc_change_gdf['LC_Change'].isin(reclass_classes))&(lc_change_gdf['GRP_TYPE'].isna())]['zone'])
     zones += barr_lv_zones
-    lc_change_gdf.loc[(lc_change_gdf['zone'].isin(g_zones))&(lc_change_gdf['T1_LU_Code']==0), 'Method'] = 'New Structure'
+    lc_change_gdf.loc[(lc_change_gdf['zone'].isin(g_zones))&(lc_change_gdf['T1_LU_Code']==0)&(lc_change_gdf['Method'].isna()), 'Method'] = 'New Structure'
     lc_change_gdf.loc[(lc_change_gdf['zone'].isin(g_zones))&(lc_change_gdf['GRP_TYPE']=='crop')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  crop_val
     lc_change_gdf.loc[(lc_change_gdf['zone'].isin(g_zones))&(lc_change_gdf['GRP_TYPE']=='pasture')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  pas_val
     lc_change_gdf.loc[(lc_change_gdf['zone'].isin(g_zones))&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  sussuc_val
-    lc_change_gdf.loc[(lc_change_gdf['zone'].isin(zones))&(lc_change_gdf['T1_LU_Code']==0), 'Method'] = 'New Structure'
+    lc_change_gdf.loc[(lc_change_gdf['zone'].isin(zones))&(lc_change_gdf['T1_LU_Code']==0)&(lc_change_gdf['Method'].isna()), 'Method'] = 'New Structure'
     lc_change_gdf.loc[(lc_change_gdf['zone'].isin(zones))&(lc_change_gdf['TYPE']=='crop')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  crop_val
     lc_change_gdf.loc[(lc_change_gdf['zone'].isin(zones))&(lc_change_gdf['TYPE']=='pasture')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  pas_val
     lc_change_gdf.loc[(lc_change_gdf['zone'].isin(zones))&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  sussuc_val 
     # Assign T1 LU to LV to Struct class specifically using GRP_TYPE if available
-    lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['T1_LU_Code']==0), 'Method'] = 'New Structure'
+    lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['T1_LU_Code']==0)&(lc_change_gdf['Method'].isna()), 'Method'] = 'New Structure'
     lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['GRP_TYPE']=='crop')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  crop_val
     lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['GRP_TYPE']=='pasture')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  pas_val
     lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['GRP_TYPE']=='other')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  sussuc_val
-    lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['T1_LU_Code']==0), 'Method'] = 'New Structure'
+    lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['T1_LU_Code']==0)&(lc_change_gdf['Method'].isna()), 'Method'] = 'New Structure'
     lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['TYPE']=='crop')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  crop_val
     lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['TYPE']=='pasture')&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  pas_val
     lc_change_gdf.loc[(lc_change_gdf['LC_Change'].isin(lc_change_classes))&(lc_change_gdf['T1_LU_Code']==0), 'T1_LU_Code'] =  sussuc_val 
-
 
     # back out tct bufs from newly developed parcels
     # add tc within bufs containing new struct to lc change gdf
@@ -338,7 +337,6 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
     cols = [x for x in list(lu2017df) if x not in ['SID', 'Class_name']]
     lu2017df = lu2017df[cols].groupby(['zone', 'T1LC', 'chg_area']).agg('sum').reset_index() #sum all non-wetland LUs by zone
     cols = [x for x in list(lu2017df) if x not in ['zone', 'T1LC', 'chg_area']]
-    print(cols)
     # REMOVE COLUMNS WHERE MAX IS < 25% OF SEG AREA
     lu2017df.loc[:, 'pct_lu'] = lu2017df[cols].max(axis=1) / lu2017df['chg_area']
     # Don't remove TC if touching Forest class
@@ -391,7 +389,6 @@ def runIndirect(lc_change_gdf, psegs, lu_2017_ras_path, t1_tc_gdf):
             all_forest.loc[:, 'T1_LU_Code'] = 0
             all_forest.loc[:, 'T1LC'] = 'Tree Canopy'
             lc_change_gdf = lc_change_gdf.append(all_forest[['zone', 'g_area', 'GID', 'Method', 'LC_Change', 'T1_LU_Code', 'T1LC', 'geometry']]) # add T1 TC touching tc change
-            print(lc_change_gdf.head())
             cols = list(lc_change_gdf)
             lc_change_gdf = lc_change_gdf.reset_index()[cols]
     # lc_change_gdf = lc_change_gdf[[cols]].reset_index() # labeebs suggestion to try, should do the same thing as above; passing list of list of list? smm thinks this will break, and this adds index column that I don't want
@@ -439,6 +436,62 @@ def run_lu_change(cf, lu_type):
     lcmap_11_19_path = os.path.join(anci_folder, 'lcmap', '10m_PreDev','Primary_2y_2011_2019_projected.tif')
 
     cdl13_path = os.path.join(anci_folder, 'CDL', '2013_10m_cdls_arc.tif')
+
+    # Read change raster xml - convert to dict
+    change_df = xml.buildChangeData(lc_change_ras_path+'.xml')
+    change_df = xml.defineReclassValues(change_df) #Value is LC Change and NewVal is T1 LC
+    lc_change_dict = {}
+    for idx, row in change_df.iterrows():
+        desc = row['Description']
+        if 'Impervioius' in desc:
+            desc = desc.replace("Impervioius", "Impervious")
+            print("Updating Impervioius: Impervious")
+        if 'Impervious Structures' in desc:
+            desc = desc.replace("Impervious Structures", "Structures")
+            print("Updating Impervious Structures: ", desc)
+        if 'Buildings' in desc:
+            desc = desc.replace("Buildings", "Structures")
+            print("Updating Buildings: ", desc)
+        if 'Other Impervious' in desc and 'Surfaces' not in desc:
+            if 'Surface' in desc:
+                desc = desc.replace("Other Impervious Surface", "Other Impervious Surfaces")
+                print("Updating Other Impervious Surfaces: ", desc)
+            else:
+                desc = desc.replace("Other Impervious", "Other Impervious Surfaces") 
+                print("Updating Other Impervious: ", desc)
+        if 'Impervious Roads' in desc:
+            desc = desc.replace("Impervious Roads", "Roads")
+            print("Updating Impervious Roads: ", desc)
+
+        lc_change_dict[desc] = row['Value']
+        change_df.loc[idx, 'Description'] = desc
+    chg_lcs = []
+    for idx, row in change_df.iterrows():
+        if ' to ' in row['Description']:
+            data = row['Description'].split(' to ')
+            for d in data:
+                if d not in chg_lcs:
+                    chg_lcs.append(d)
+        elif row['Description'] not in chg_lcs:
+            chg_lcs.append(row['Description'])
+    valid_lcs = [
+        'Barren',
+        'Emergent Wetlands',
+        'Low Vegetation',
+        'Tree Canopy',
+        'Other Impervious Surfaces',
+        'Roads',
+        'Scrub\Shrub',
+        'Structures',
+        'Tree Canopy Over Other Impervious Surfaces',
+        'Tree Canopy Over Roads',
+        'Tree Canopy Over Structures'  ,
+        'Water',
+    ]
+    dif_lc = list( set(chg_lcs) - set(valid_lcs) )
+    if len(dif_lc) > 0:
+        print("Invalid LC in LC Change XML: ", dif_lc)
+        raise TypeError("Invalid LC in LC Change XML")
 
     # get county boundary poly
     cnty_boundary = lch.getCntyBoundary(anci_folder, cf)
@@ -520,25 +573,7 @@ def run_lu_change(cf, lu_type):
     lc_change_gdf = lc_change_gdf.merge(pars_change_table, on='zone', how='left') # ADD PID column to change segments
     lc_change_gdf = lc_change_gdf.merge(tab_area_df, on='PID', how='left') # add TYPE field to change segments
     del pars_change_table
-
-    # Read change raster xml - convert to dict
-    change_df = xml.buildChangeData(lc_change_ras_path+'.xml')
-    change_df = xml.defineReclassValues(change_df) #Value is LC Change and NewVal is T1 LC
-    lc_change_dict = {}
-    for idx, row in change_df.iterrows():
-        desc = row['Description']
-        if 'Impervious Structures' in desc:
-            desc = desc.replace("Impervious Structures", "Structures")
-            print("Updating Impervious Structures: ", desc)
-        elif 'Other Impervious' in desc and 'Surfaces' not in desc:
-            if 'Surface' in desc:
-                desc = desc.replace("Other Impervious Surface", "Other Impervious Surface")
-                print("Updating Other Impervious Surfaces: ", desc)
-            else:
-                desc = desc.replace("Other Impervious", "Other Impervious Surfaces") 
-                print("Updating Other Impervious: ", desc)
-
-        lc_change_dict[desc] = row['Value']
+        
     # Tag change raster with majority LC change class and majority T2 LU class
     chg_tab = lch.zonal_stats_mp(chg_seg_dict, 'MAJ', lc_change_ras_path, list(lc_change_dict.values()), ['zone', 'LC_Chg_Val'], False, True)
     for i in list(set(list(chg_tab['LC_Chg_Val']))):
@@ -626,7 +661,7 @@ def run_lu_change(cf, lu_type):
     lc_change_gdf = lc_change_gdf[['zone', 'T1_LU_Code', 'T1_LU', 'T2 LU', 'LC_Change', 'Method', 'TYPE', 'Type_log', 'GRP_TYPE', 'LC_Chg_Val', 'PID', 'Acres', 'geometry']]
     lc_change_gdf.to_file(os.path.join(temp_path, f"{cf}_LU_change_{lu_type}.shp"))
 
-    if len(lc_change_gdf[(lc_change_gdf['T1_LU_Code'].isin([0,-1]))|(lc_change_gdf['T1_LU_Code'].isna())]):
+    if len(lc_change_gdf[(lc_change_gdf['T1_LU_Code'].isin([0,-1]))|(lc_change_gdf['T1_LU_Code'].isna())]) > 0:
     # if 0 in list(lc_change_gdf['T1_LU_Code']) or -1 in list(lc_change_gdf['T1_LU_Code']):
         print("\n***********************************************************************************")
         print("Missing T1 LU for ", len(lc_change_gdf[lc_change_gdf['T1_LU_Code'].isin([0, -1])]), " segments")

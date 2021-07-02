@@ -773,7 +773,7 @@ def zonal_stats(src, geom, statType, noData, isT2LU, isLCChange): #delete is T2L
         else:
             return 0
     except Exception as e:
-        print(e)
+        # print(e)
         # sys.exit(1)
         # print("\n", ary, "\n")
         return -1
@@ -1044,29 +1044,27 @@ def assignGroups(gdf, uid):
             return pd.DataFrame(columns={uid, 'GID'})
         groups = pd.DataFrame()
         groups.loc[:, uid] = list(set(list(set(list(joined_table[left_id])+list(joined_table[right_id]))))) #all zones that are touching
-        if len(groups) > 0:
-            groups.loc[:, 'GID'] = 0 #set group id to 0
-            gid = 1
-            for zone in list(groups[uid]):
-                if list(groups[groups[uid] == zone]['GID'])[0] == 0: #still needs group
-                    all_in_group = list(joined_table[joined_table[left_id] == zone][right_id])
-                    tmp = all_in_group.copy()
-                    while len(tmp) > 0:
-                        t = list(joined_table[joined_table[left_id] == tmp[0]][right_id])
-                        t = list( set(t) - set(all_in_group))
-                        tmp += t
-                        all_in_group += t
-                        del tmp[0]
+        groups.loc[:, 'GID'] = 0 #set group id to 0
+        gid = 1
+        for zone in list(groups[uid]):
+            if list(groups[groups[uid] == zone]['GID'])[0] == 0: #still needs group
+                all_in_group = list(joined_table[joined_table[left_id] == zone][right_id])
+                tmp = all_in_group.copy()
+                while len(tmp) > 0:
+                    t = list(joined_table[joined_table[left_id] == tmp[0]][right_id])
+                    t = list( set(t) - set(all_in_group))
+                    tmp += t
+                    all_in_group += t
+                    del tmp[0]
 
-                    all_gids = list(set(list(groups[groups[uid].isin(all_in_group)]['GID']))) #should set of 0
-                    all_in_group += [zone]
-                    if len(all_gids) > 1 or all_gids[0] != 0: #should never happen
-                        groups.loc[groups[uid].isin(all_in_group), 'GID'] = all_gids[0]
-                    else:
-                        groups.loc[groups[uid].isin(all_in_group), 'GID'] = gid
-                        gid += 1
-            return groups[[uid, 'GID']]
-        return pd.DataFrame(columns={uid, 'GID'})
+                all_gids = list(set(list(groups[groups[uid].isin(all_in_group)]['GID']))) #should set of 0
+                all_in_group += [zone]
+                if len(all_gids) > 1 or all_gids[0] != 0: #should never happen
+                    groups.loc[groups[uid].isin(all_in_group), 'GID'] = all_gids[0]
+                else:
+                    groups.loc[groups[uid].isin(all_in_group), 'GID'] = gid
+                    gid += 1
+        return groups[[uid, 'GID']]
     return pd.DataFrame(columns={uid, 'GID'})
 
 def indirectTC(tree_canopy_gdf, psegs, lu_change_gdf):
@@ -1123,9 +1121,10 @@ def indirectLV(low_veg_gdf, lu_change_gdf):
             lcmap_85_17_path - path to LCMAP patterns raster
     Returns: lu_change_gdf - updated lu change
     # """
-    lu_change_gdf.loc[(lu_change_gdf['TYPE']=='crop') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Cropland Herbaceous', False)
-    lu_change_gdf.loc[(lu_change_gdf['TYPE']=='pasture') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Pasture/Hay Herbaceous', False)
-    lu_change_gdf.loc[(lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Suspended Succession Herbaceous', False) 
+    rem_zones = list(low_veg_gdf['zone'])
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='crop') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Cropland Herbaceous', False)
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['TYPE']=='pasture') & (lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Pasture/Hay Herbaceous', False)
+    lu_change_gdf.loc[(lu_change_gdf['zone'].isin(rem_zones))&(lu_change_gdf['T1_LU_Code'] == 0), 'T1_LU_Code'] = get_lu_code('Suspended Succession Herbaceous', False) 
 
     return lu_change_gdf
 

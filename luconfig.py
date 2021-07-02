@@ -115,6 +115,8 @@ lu_code_dict = {
     'Terrene/Isolated Wetlands Tree Canopy' : 5304,
     'Terrene/Isolated Wetlands Forest' : 5305,
     'Bare Shore' : 5400,
+    'Herbaceous' : 3420,
+    'Scrub/Shrub' : 3430
     }
 
 
