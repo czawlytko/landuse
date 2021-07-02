@@ -476,7 +476,8 @@ def getDirectChange(val):
             'Water to Other Impervious Surfaces'    : get_lu_code('Water', False),
             'Water to Scrub\Shrub'  : get_lu_code('Water', False),
             'Water to Structures'   : get_lu_code('Water', False),
-            'Water to Tree Canopy'  : get_lu_code('Water', False)
+            'Water to Tree Canopy'  : get_lu_code('Water', False),
+            'Water to Roads' : get_lu_code('Water', False),
         }
     if val == 'ALL':
         return direct_dict
