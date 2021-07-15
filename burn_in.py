@@ -9,7 +9,7 @@ rasterizes output of LU ***with dictionary applied to change to 4 digit land use
 performs burn in of impervious surfaces, TC over, wetlands classes.
 """
 
-import sys
+
 from pathlib import Path
 import geopandas as gpd
 import rasterio
@@ -17,21 +17,16 @@ from rasterio import features
 from rasterio.mask import mask
 from rasterio.enums import Resampling
 from rasterio import Affine
-from rasterio.windows import Window
+# from rasterio.windows import Window
 from rasterio.features import rasterize, shapes
-import concurrent.futures
-import fiona
 import time
 import numpy as np
 import os
 import multiprocessing as mp 
-import threading
 from shapely.geometry import box, mapping, Polygon
-import shapely
 from fiona.crs import from_epsg
 import pandas as pd
-from osgeo import gdal, osr, gdalconst
-from scipy.ndimage import label
+from osgeo import gdal, gdalconst
 
 from helpers import etime
 #####################################################################################
