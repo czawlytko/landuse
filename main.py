@@ -62,6 +62,9 @@ if __name__ == "__main__":
     parser.add_argument('-cfs', nargs='+', help='list co_fips (cf) ', required=True)
     parser.add_argument('--test', default=False, action='store_true')
 
+
+
+
     args = parser.parse_args()
     cflist = list(args.cfs)
 
