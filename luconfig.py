@@ -10,6 +10,7 @@ TC_Tile_Max = 500000
 TC_CPUS = 15 # number of cores to be used to help divide total core count and balance processes.
 
 dest  = f"some_folder"
+azure_test = f"some_other_folder"
 test = False
 
 anci_dict = {
