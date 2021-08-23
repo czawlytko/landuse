@@ -9,7 +9,7 @@ TC_Tile_Min = 150000 # thresholds for minimum number of psegs required to genera
 TC_Tile_Max = 500000
 TC_CPUS = 15 # number of cores to be used to help divide total core count and balance processes.
 
-dest  = f""
+dest  = f"some_folder"
 test = False
 
 anci_dict = {
